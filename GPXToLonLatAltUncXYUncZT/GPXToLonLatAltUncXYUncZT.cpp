@@ -1,20 +1,110 @@
-﻿// GPXToLonLatAltUncXYUncZT.cpp : 이 파일에는 'main' 함수가 포함됩니다. 거기서 프로그램 실행이 시작되고 종료됩니다.
-//
-
 #include <iostream>
+#include <filesystem>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <ctime>
+#include <tinyxml2.h>
 
-int main()
-{
-    std::cout << "Hello World!\n";
+namespace fs = std::filesystem;
+using namespace tinyxml2;
+
+struct Record {
+    double lon{0};
+    double lat{0};
+    double alt{0};
+    double hacc{0};
+    double vacc{0};
+    long long timestamp{0};
+};
+
+static long long parseTimestamp(const std::string& ts) {
+    std::tm tm{};
+    if (strptime(ts.c_str(), "%Y-%m-%dT%H:%M:%SZ", &tm)) {
+        time_t t = timegm(&tm);
+        return static_cast<long long>(t);
+    }
+    return 0;
 }
 
-// 프로그램 실행: <Ctrl+F5> 또는 [디버그] > [디버깅하지 않고 시작] 메뉴
-// 프로그램 디버그: <F5> 키 또는 [디버그] > [디버깅 시작] 메뉴
+static void processTrkpt(XMLElement* trkpt, std::vector<Record>& records) {
+    Record r;
+    trkpt->QueryDoubleAttribute("lat", &r.lat);
+    trkpt->QueryDoubleAttribute("lon", &r.lon);
 
-// 시작을 위한 팁: 
-//   1. [솔루션 탐색기] 창을 사용하여 파일을 추가/관리합니다.
-//   2. [팀 탐색기] 창을 사용하여 소스 제어에 연결합니다.
-//   3. [출력] 창을 사용하여 빌드 출력 및 기타 메시지를 확인합니다.
-//   4. [오류 목록] 창을 사용하여 오류를 봅니다.
-//   5. [프로젝트] > [새 항목 추가]로 이동하여 새 코드 파일을 만들거나, [프로젝트] > [기존 항목 추가]로 이동하여 기존 코드 파일을 프로젝트에 추가합니다.
-//   6. 나중에 이 프로젝트를 다시 열려면 [파일] > [열기] > [프로젝트]로 이동하고 .sln 파일을 선택합니다.
+    if (auto* ele = trkpt->FirstChildElement("ele"))
+        ele->QueryDoubleText(&r.alt);
+
+    if (auto* timeEl = trkpt->FirstChildElement("time")) {
+        if (const char* ts = timeEl->GetText())
+            r.timestamp = parseTimestamp(ts);
+    }
+
+    if (auto* ext = trkpt->FirstChildElement("extensions")) {
+        if (auto* tpe = ext->FirstChildElement("rousen:TrackPointExtension")) {
+            if (auto* h = tpe->FirstChildElement("rousen:horizontalAccuracy"))
+                h->QueryDoubleText(&r.hacc);
+            if (auto* v = tpe->FirstChildElement("rousen:verticalAccuracy"))
+                v->QueryDoubleText(&r.vacc);
+        }
+    }
+    records.push_back(r);
+}
+
+static void traverse(XMLElement* node, std::vector<Record>& records) {
+    for (auto* e = node; e; e = e->NextSiblingElement()) {
+        if (std::string_view{e->Name()} == "trkpt")
+            processTrkpt(e, records);
+        if (auto* child = e->FirstChildElement())
+            traverse(child, records);
+    }
+}
+
+static bool parseGPX(const fs::path& path, std::vector<Record>& records) {
+    XMLDocument doc;
+    if (doc.LoadFile(path.string().c_str()) != XML_SUCCESS)
+        return false;
+    XMLElement* root = doc.RootElement();
+    if (!root) return false;
+    traverse(root, records);
+    return true;
+}
+
+static bool writeCSV(const fs::path& out, const std::vector<Record>& records) {
+    std::ofstream ofs(out);
+    if (!ofs) return false;
+    ofs << "Longitude,Latitude,Altitude,XYUncertainty,ZUncertainty,Timestamp\n";
+    for (const auto& r : records) {
+        ofs << r.lon << ',' << r.lat << ',' << r.alt << ',' << r.hacc << ','
+            << r.vacc << ',' << r.timestamp << "\n";
+    }
+    return true;
+}
+
+int main(int argc, char* argv[]) {
+    if (argc < 3) {
+        std::cerr << "Usage: " << argv[0] << " <SourceFolder> <TargetFolder>\n";
+        return 1;
+    }
+    fs::path source = argv[1];
+    fs::path target = argv[2];
+    if (!fs::exists(target)) {
+        fs::create_directories(target);
+    }
+    for (const auto& entry : fs::directory_iterator(source)) {
+        if (!entry.is_regular_file()) continue;
+        auto ext = entry.path().extension();
+        if (ext != ".gpx" && ext != ".GPX") continue;
+        std::vector<Record> records;
+        if (!parseGPX(entry.path(), records)) {
+            std::cerr << "Failed to parse " << entry.path() << "\n";
+            continue;
+        }
+        fs::path outPath = target / entry.path().filename().replace_extension(".csv");
+        if (!writeCSV(outPath, records)) {
+            std::cerr << "Failed to write " << outPath << "\n";
+        }
+    }
+    return 0;
+}
+
