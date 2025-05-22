@@ -4,6 +4,9 @@
 #include <vector>
 #include <string>
 #include <ctime>
+#include <iomanip>
+#include <sstream>
+#include <cctype>
 #include "tinyxml2.h"
 
 namespace fs = std::filesystem;
@@ -21,11 +24,39 @@ struct Record {
 
 static long long parseTimestamp(const std::string& ts) {
     std::tm tm{};
-    if (strptime(ts.c_str(), "%Y-%m-%dT%H:%M:%SZ", &tm)) {
-        time_t t = timegm(&tm);
-        return static_cast<long long>(t);
+    std::istringstream ss(ts);
+    ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
+    if (ss.fail())
+        return 0;
+
+    // Skip fractional seconds if present
+    if (ss.peek() == '.') {
+        ss.get();
+        while (std::isdigit(ss.peek()))
+            ss.get();
     }
-    return 0;
+
+    int sign = 0, h = 0, m = 0;
+    if (ss.peek() == 'Z') {
+        ss.get();
+    } else if (ss.peek() == '+' || ss.peek() == '-') {
+        char c = ss.get();
+        sign = (c == '+') ? 1 : -1;
+        ss >> std::setw(2) >> h;
+        if (ss.peek() == ':')
+            ss.get();
+        ss >> std::setw(2) >> m;
+    }
+
+    tm.tm_isdst = 0;
+#ifdef _WIN32
+    time_t t = _mkgmtime(&tm);
+#else
+    time_t t = timegm(&tm);
+#endif
+    if (sign)
+        t -= sign * (h * 3600 + m * 60);
+    return static_cast<long long>(t);
 }
 
 static void processTrkpt(XMLElement* trkpt, std::vector<Record>& records) {
