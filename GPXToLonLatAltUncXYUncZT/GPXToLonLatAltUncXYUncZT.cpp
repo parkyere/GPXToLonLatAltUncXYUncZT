@@ -9,6 +9,7 @@
 namespace fs = std::filesystem;
 using namespace tinyxml2;
 
+
 struct Record {
     double lon{0};
     double lat{0};
@@ -91,10 +92,12 @@ int main(int argc, char* argv[]) {
     if (!fs::exists(target)) {
         fs::create_directories(target);
     }
+
     for (const auto& entry : fs::directory_iterator(source)) {
         if (!entry.is_regular_file()) continue;
         auto ext = entry.path().extension();
         if (ext != ".gpx" && ext != ".GPX") continue;
+
         std::vector<Record> records;
         if (!parseGPX(entry.path(), records)) {
             std::cerr << "Failed to parse " << entry.path() << "\n";
