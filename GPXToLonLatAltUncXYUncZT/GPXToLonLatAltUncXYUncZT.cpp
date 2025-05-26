@@ -8,6 +8,7 @@
 #include <sstream>
 #include <cctype>
 #include "tinyxml2.h"
+#include "rts_smoother.h"
 
 namespace fs = std::filesystem;
 using namespace tinyxml2;
@@ -105,10 +106,9 @@ static bool parseGPX(const fs::path& path, std::vector<Record>& records) {
 static bool writeCSV(const fs::path& out, const std::vector<Record>& records) {
     std::ofstream ofs(out);
     if (!ofs) return false;
-    ofs << "Longitude,Latitude,Altitude,XYUncertainty,ZUncertainty,Timestamp\n";
+    ofs << "Longitude,Latitude,Altitude,Timestamp\n";
     for (const auto& r : records) {
-        ofs << r.lon << ',' << r.lat << ',' << r.alt << ',' << r.hacc << ','
-            << r.vacc << ',' << r.timestamp << "\n";
+        ofs << r.lon << ' ' << r.lat << ' ' << r.alt << ' ' << r.timestamp << "\n";
     }
     return true;
 }
@@ -135,7 +135,65 @@ int main(int argc, char* argv[]) {
             continue;
         }
         fs::path outPath = target / entry.path().filename().replace_extension(".csv");
-        if (!writeCSV(outPath, records)) {
+        std::vector<GPSMeasurement> measurements;
+		for (const auto& r : records) {
+			GPSMeasurement m;
+			m.lat = r.lat;
+			m.lon = r.lon;
+			m.alt = r.alt;
+			m.horiz_std = r.hacc;
+			m.vert_std = r.vacc;
+			m.timestamp = r.timestamp;
+			m.has_std = (r.hacc > 0 && r.vacc > 0);
+			measurements.push_back(m);
+		}
+        estimateUncertainties(measurements);
+
+        std::vector<StepData> steps(measurements.size());
+        State state{};
+        Matrix6 P = identity6();
+        double accel_var = 1.0; // process noise acceleration variance
+        double prev_time = measurements[0].timestamp;
+
+        for (size_t i = 0;i < measurements.size();++i) {
+            double t = measurements[i].timestamp;
+            double dt = (i == 0) ? 0.0 : t - prev_time;
+            prev_time = t;
+            if (i > 0) predict(state, P, dt, accel_var);
+            steps[i].predicted_state = state;
+            steps[i].predicted_cov = P;
+            steps[i].dt = dt;
+			steps[i].timestamp = t;
+
+            std::array<double, 3> z = geodeticToECEF(measurements[i].lat, measurements[i].lon, measurements[i].alt);
+            Matrix3 R{};
+            double hstd = measurements[i].has_std ? measurements[i].horiz_std : 5.0;
+            double vstd = measurements[i].has_std ? measurements[i].vert_std : 5.0;
+            R[0][0] = hstd * hstd;
+            R[1][1] = hstd * hstd;
+            R[2][2] = vstd * vstd;
+            update(state, P, z, R);
+            steps[i].filtered_state = state;
+            steps[i].filtered_cov = P;
+        }
+
+        smooth(steps, accel_var);
+        std::vector<Record> smoothedRecords;
+        for (const auto& step : steps) {
+            auto llh = ecefToGeodetic(step.filtered_state.pos[0],
+                step.filtered_state.pos[1],
+                step.filtered_state.pos[2]);
+			smoothedRecords.push_back({
+				llh[1], // lon
+				llh[0], // lat
+				llh[2], // alt
+				std::sqrt(step.filtered_cov[0][0]), // hacc
+				std::sqrt(step.filtered_cov[2][2]), // vacc
+				(long long)step.timestamp // timestamp
+				});
+        }
+
+        if (!writeCSV(outPath, smoothedRecords)) {
             std::cerr << "Failed to write " << outPath << "\n";
         }
     }
