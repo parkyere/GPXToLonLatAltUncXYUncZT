@@ -134,6 +134,10 @@ int main(int argc, char* argv[]) {
             std::cerr << "Failed to parse " << entry.path() << "\n";
             continue;
         }
+        if (records.empty()) {
+            std::cerr << "No trackpoints in " << entry.path() << "\n";
+            continue;
+        }
         fs::path outPath = target / entry.path().filename().replace_extension(".csv");
         std::vector<GPSMeasurement> measurements;
 		for (const auto& r : records) {
