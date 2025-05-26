@@ -137,8 +137,11 @@
     <ClCompile Include="tinyxml2.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Edge.hpp" />
+    <ClInclude Include="Line.hpp" />
     <ClInclude Include="rts_smoother.h" />
     <ClInclude Include="tinyxml2.h" />
+    <ClInclude Include="Vertex.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
