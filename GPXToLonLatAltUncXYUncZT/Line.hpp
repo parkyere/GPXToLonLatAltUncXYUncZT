@@ -7,8 +7,8 @@ struct Line {
 private:
 	Vertex p1, p2;
 	double xdiff, ydiff, zdiff;
-	double c; //y-intersect of the line equation
-	double m; // slope of the line
+    double c{ 0 }; //y-intersect of the line equation
+    double m{ 0 }; // slope of the line
 	double theta; //smallest angle between x-axis and this Line object
 public:
 	Line(Vertex p1, Vertex p2) 
@@ -36,9 +36,7 @@ public:
             else {
                 theta = -1 * rad2deg(cosAngle1);
             }
-
             c = ((p1.getY() + p2.getY()) - m * (p1.getX() + p2.getX())) / 2.0;
-
         }
         else if (ydiff > 0.0) {
             theta = rad2deg(std::numbers::pi / 2.0);

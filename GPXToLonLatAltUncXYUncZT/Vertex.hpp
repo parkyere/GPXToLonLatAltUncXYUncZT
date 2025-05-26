@@ -15,7 +15,7 @@ private:
 	double timestamp = -1; //Timestamp in milliseconds
 public:
 	Vertex() = default;
-	Vertex(double x, double y, double z) : x{ x }, y{ y }, z{ z } {	}
+	Vertex(double x, double y, double z) : x{ x }, y{ y }, z{ z }, lng{ 0 }, lat{ 0 }, alt{ 0 } {}
 	Vertex(double x, double y, double z, double timestamp) : Vertex(x, y, z) {
 		this->timestamp = timestamp;
 	}
@@ -76,7 +76,7 @@ public:
 		return std::sqrt(dx * dx + dy * dy);
 	}
 	void reset() { done = false; }
-	std::string toString() {
+	std::string toString() const {
 		return std::format("{0:.8f} {1:.8f} {2:.8f}",x,y,z);
 	}
 	Vertex deepCopy() {
