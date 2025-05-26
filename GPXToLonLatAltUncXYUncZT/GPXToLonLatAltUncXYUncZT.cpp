@@ -103,10 +103,10 @@ static bool parseGPX(const fs::path& path, std::vector<Record>& records) {
     return true;
 }
 
-static bool writeCSV(const fs::path& out, const std::vector<Record>& records) {
+static bool writeSmoothedTrajectory(const fs::path& out, const std::vector<Record>& records) {
     std::ofstream ofs(out);
     if (!ofs) return false;
-    ofs << "Longitude,Latitude,Altitude,Timestamp\n";
+    //ofs << "Longitude,Latitude,Altitude,Timestamp\n";
     for (const auto& r : records) {
         ofs << r.lon << ' ' << r.lat << ' ' << r.alt << ' ' << r.timestamp << "\n";
     }
@@ -193,7 +193,7 @@ int main(int argc, char* argv[]) {
 				});
         }
 
-        if (!writeCSV(outPath, smoothedRecords)) {
+        if (!writeSmoothedTrajectory(outPath, smoothedRecords)) {
             std::cerr << "Failed to write " << outPath << "\n";
         }
     }
