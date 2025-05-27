@@ -5,26 +5,29 @@
 #include <vector>
 #include <limits>
 #include <compare>
+#include <memory>
 struct Edge {
 private:
-	Vertex vertex1, vertex2;	//first, second endpoint of edge
+	VertexPtr vertex1, vertex2;	//first, second endpoint of edge
 	double curveStart, curveEnd; // contains start, end point of white interval on curve
 	double edgeStart, edgeEnd; // contains corresponding points on that edge
-	Line line; // line from vertex v1 to v2
+	LinePtr line; // line from vertex v1 to v2
 	bool done; // done is marked as true when an edge is done being compared with all segments of a curve.
 	int curveStartIndex, curveEndIndex; // contains indices of start and end index curves for white intervals corresponding to the edge 
-	std::vector<double> edgeSplitPositions;   //Contains a sorted list (in descending order) of positions indicating where to split this edge.
-	std::vector<int> edgeSplitVertices;	//For each split position the corresponding new vertex is saved in this list.
+	std::shared_ptr<std::vector<double>> edgeSplitPositions;   //Contains a sorted list (in descending order) of positions indicating where to split this edge.
+	std::shared_ptr<std::vector<int>> edgeSplitVertices;	//For each split position the corresponding new vertex is saved in this list.
 public:
 	void reset() {
 		curveStart = std::numeric_limits<double>::max();
 		curveEnd = -1.0;
 		edgeStart = std::numeric_limits<double>::max();
 		edgeEnd = -1.0;
-		line = Line(vertex1, vertex2);
+		line = new Line(vertex1, vertex2);
 		done = false;
 	}
-	Edge(Vertex v1, Vertex v2) : vertex1{ v1 }, vertex2{ v2 }, line{ v1, v2 } {
+	Edge(VertexPtr v1, VertexPtr v2) : vertex1{ v1 }, vertex2{ v2 },
+		edgeSplitPositions{ new std::vector<double>()},
+		edgeSplitVertices{ new std::vector<int>() } {
 		reset();
 	}
 	void set(Edge edge) {
@@ -35,9 +38,9 @@ public:
 		line = Line(vertex1, vertex2);
 		done = edge.done;
 	}
-	Vertex& getVertex1() { return vertex1; }
-	Vertex& getVertex2() { return vertex2; }
-	Line& getLine() { return line; }
+	VertexPtr getVertex1() { return vertex1; }
+	VertexPtr getVertex2() { return vertex2; }
+	LinePtr getLine() { return line; }
 	bool getDone() { return done; }
 	void setDone(bool done) { this->done = done; }
 	double getCurveStart() { return curveStart; }
@@ -58,8 +61,8 @@ public:
 	void setCurveEndIndex(int endIndex) {
 		curveEndIndex = endIndex;
 	}
-	std::vector<int>& getEdgeSplitVertices() { return edgeSplitVertices; }
-	std::vector<double>& getEdgeSplitPositions() { return edgeSplitPositions; }
+	std::vector<int>& getEdgeSplitVertices() { return *edgeSplitVertices; }
+	std::vector<double>& getEdgeSplitPositions() { return *edgeSplitPositions; }
 	// Inserts a new split position if the list doesn't have it, otherwise return.
 	// position: indicvate the new split position
 	// vertex : indicates the vertex which should be inserted in this edge.
@@ -91,3 +94,4 @@ public:
 		return std::strong_ordering::equal;
 	}
 };
+using EdgePtr = std::shared_ptr<Edge>;

@@ -7,22 +7,24 @@
 #include <stdexcept>
 #include <array>
 #include <numbers>
+#include <memory>
+
 constexpr double EqualityCriterion = 1e-36; // Criterion for equality of two doubles
 inline bool isEqual(double a, double b) { return std::abs(a - b) < EqualityCriterion; }
 struct Line {
 private:
-    Vertex p1, p2;
+    VertexPtr p1, p2;
     double xdiff, ydiff, zdiff;
     double c{ 0 }; //y-intersect of the line equation
     double m{ 0 }; // slope of the line
     double theta; //smallest angle between x-axis and this Line object
 public:
 	Line() = default;
-    Line(Vertex p1, Vertex p2)
+    Line(VertexPtr p1, VertexPtr p2)
         : p1{ p1 }, p2{ p2 },
-        xdiff{ p2.getX() - p1.getX() },
-        ydiff{ p2.getY() - p1.getY() },
-        zdiff{ p2.getZ() - p1.getZ() } {
+        xdiff{ p2->getX() - p1->getX() },
+        ydiff{ p2->getY() - p1->getY() },
+        zdiff{ p2->getZ() - p1->getZ() } {
         /*
          * y = mx + c this equation was used unless this line is parallel to y axis.
          *
@@ -33,9 +35,9 @@ public:
 
         if (!isEqual(xdiff,0.0)) {
             m = ydiff / xdiff;
-            Vertex vector = Vertex(p2.getX() - p1.getX(), p2.getY() - p1.getY(), 0);
-            double angle1 = Vertex::dotProd(vector, Vertex(1.0, 0.0, 0.0))
-                / vector.norm();
+            VertexPtr vector{ new Vertex(p2->getX() - p1->getX(), p2->getY() - p1->getY(), 0) };
+            double angle1 = Vertex::dotProd(*vector, Vertex(1.0, 0.0, 0.0))
+                / vector->norm();
             double cosAngle1 = std::acos(angle1);
             if (ydiff >= 0) {
                 theta = rad2deg(cosAngle1);
@@ -43,7 +45,7 @@ public:
             else {
                 theta = -1 * rad2deg(cosAngle1);
             }
-            c = ((p1.getY() + p2.getY()) - m * (p1.getX() + p2.getX())) / 2.0;
+            c = ((p1->getY() + p2->getY()) - m * (p1->getX() + p2->getX())) / 2.0;
         }
         else if (ydiff > 0.0) {
             theta = rad2deg(std::numbers::pi / 2.0);
@@ -52,8 +54,8 @@ public:
             theta = -rad2deg(std::numbers::pi / 2.0);
         }
     }
-    Vertex& getP1() { return p1; }
-    Vertex& getP2() { return p2; }
+    VertexPtr getP1() { return p1; }
+    VertexPtr getP2() { return p2; }
     double getXdiff() const { return xdiff; }
     double getYdiff() const { return ydiff; }
     double getZdiff() const { return zdiff; }
@@ -65,11 +67,11 @@ public:
     void setTheta(double theta) { this->theta = theta; }
     std::string toString() const {
         return std::format("[{0:.8f} {1:.8f} {2:.8f}; {3:.8f} {4:.8f} {5:.8f}]",
-            p1.getX(), p1.getY(), p1.getZ(),
-            p2.getX(), p2.getY(), p2.getZ());
+            p1->getX(), p1->getY(), p1->getZ(),
+            p2->getX(), p2->getY(), p2->getZ());
     }
     double avgAltitude() const {
-        return (p1.getZ() + p2.getZ()) / 2.0;
+        return (p1->getZ() + p2->getZ()) / 2.0;
     }
     /**
  * Compute intersection of eps-disc around p and line
@@ -93,11 +95,11 @@ public:
      * a*t^2 + b*t + c = 0
      */
         double t[2];
-        double b = 2 * ((p1.getX() - p.getX()) * xdiff + (p1.getY() - p.getY()) * ydiff);
-        double c = (p1.getX() - p.getX()) * (p1.getX() - p.getX()) + (p1.getY() - p.getY())
-            * (p1.getY() - p.getY()) - eps * eps;
+        double b = 2 * ((p1->getX() - p.getX()) * xdiff + (p1->getY() - p.getY()) * ydiff);
+        double c = (p1->getX() - p.getX()) * (p1->getX() - p.getX()) + (p1->getY() - p.getY())
+            * (p1->getY() - p.getY()) - eps * eps;
         double a = xdiff * xdiff + ydiff * ydiff;
-        if (a < EqualityCriterion) {
+        if (isEqual(a,0.0)) {
             return {};
         }
         double determinant = b * b - 4 * a * c;
@@ -108,8 +110,8 @@ public:
         }
         else if (precisionCompromise) {
             double newEps = eps + 0.1;
-            double newC = (p1.getX() - p.getX()) * (p1.getX() - p.getX()) + (p1.getY() - p.getY())
-                * (p1.getY() - p.getY()) - newEps * newEps;
+            double newC = (p1->getX() - p.getX()) * (p1->getX() - p.getX()) + (p1->getY() - p.getY())
+                * (p1->getY() - p.getY()) - newEps * newEps;
             double newDeterminant = b * b - 4 * a * newC;
             if (newDeterminant >= 0) {
                 t[1] = (-b + std::sqrt(newDeterminant)) / (2 * a);
@@ -138,55 +140,55 @@ public:
  *         points on this line and next two corresponds to intersections with lines[0] and
  *         lines[1] respectively.
  */
-    std::array<double, 4> getIntervals(std::array<Line,2>& lines) {
+    std::array<double, 4> getIntervals(std::array<LinePtr,2>& lines) {
         double cIntervalStart;
         double cIntervalEnd;
         double neighborhoodStart;
         double neighborhoodEnd;
 
-        if (lines[0].getXdiff() == 0.0) {
+        if (lines[0]->getXdiff() == 0.0) {
             // when the edge is a vertical line
-            cIntervalStart = m * lines[0].getP1().getX() + c;
-            cIntervalEnd = m * lines[1].getP1().getX() + c;
+            cIntervalStart = m * lines[0]->getP1()->getX() + c;
+            cIntervalEnd = m * lines[1]->getP1()->getX() + c;
 
-            neighborhoodStart = (cIntervalStart - lines[0].getP1().getY()) / lines[0].getYdiff();
-            neighborhoodEnd = (cIntervalEnd - lines[1].getP1().getY()) / lines[1].getYdiff();
+            neighborhoodStart = (cIntervalStart - lines[0]->getP1()->getY()) / lines[0]->getYdiff();
+            neighborhoodEnd = (cIntervalEnd - lines[1]->getP1()->getY()) / lines[1]->getYdiff();
             if (ydiff != 0.0) {
-                cIntervalStart = (cIntervalStart - getP1().getY()) / ydiff;
-                cIntervalEnd = (cIntervalEnd - getP1().getY()) / ydiff;
+                cIntervalStart = (cIntervalStart - getP1()->getY()) / ydiff;
+                cIntervalEnd = (cIntervalEnd - getP1()->getY()) / ydiff;
             }
             else {
-                cIntervalStart = (lines[0].getP1().getX() - p1.getX()) / xdiff;
-                cIntervalEnd = (lines[1].getP1().getX() - p1.getX()) / xdiff;
+                cIntervalStart = (lines[0]->getP1()->getX() - p1->getX()) / xdiff;
+                cIntervalEnd = (lines[1]->getP1()->getX() - p1->getX()) / xdiff;
             }
 
         }
         else if (xdiff == 0.0) {
             // when the line is a vertical line
-            cIntervalStart = lines[0].getM() * getP1().getX() + lines[0].getC();
-            cIntervalEnd = lines[1].getM() * getP1().getX() + lines[1].getC();
+            cIntervalStart = lines[0]->getM() * getP1()->getX() + lines[0]->getC();
+            cIntervalEnd = lines[1]->getM() * getP1()->getX() + lines[1]->getC();
 
-            if (lines[0].getYdiff() != 0.0) {
-                neighborhoodStart = (cIntervalStart - lines[0].getP1().getY()) / lines[0].getYdiff();
-                neighborhoodEnd = (cIntervalEnd - lines[1].getP1().getY()) / lines[1].getYdiff();
+            if (lines[0]->getYdiff() != 0.0) {
+                neighborhoodStart = (cIntervalStart - lines[0]->getP1()->getY()) / lines[0]->getYdiff();
+                neighborhoodEnd = (cIntervalEnd - lines[1]->getP1()->getY()) / lines[1]->getYdiff();
             }
             else {
-                neighborhoodStart = (p1.getX() - lines[0].getP1().getX()) / lines[0].getXdiff();
-                neighborhoodEnd = (p1.getX() - lines[1].getP1().getX()) / lines[1].getXdiff();
+                neighborhoodStart = (p1->getX() - lines[0]->getP1()->getX()) / lines[0]->getXdiff();
+                neighborhoodEnd = (p1->getX() - lines[1]->getP1()->getX()) / lines[1]->getXdiff();
             }
-            cIntervalStart = (cIntervalStart - getP1().getY()) / ydiff;
-            cIntervalEnd = (cIntervalEnd - getP1().getY()) / ydiff;
+            cIntervalStart = (cIntervalStart - getP1()->getY()) / ydiff;
+            cIntervalEnd = (cIntervalEnd - getP1()->getY()) / ydiff;
         }
         else {
 
-            cIntervalStart = -(c - lines[0].getC()) / (m - lines[0].getM());
-            cIntervalEnd = -(c - lines[1].getC()) / (m - lines[1].getM());
+            cIntervalStart = -(c - lines[0]->getC()) / (m - lines[0]->getM());
+            cIntervalEnd = -(c - lines[1]->getC()) / (m - lines[1]->getM());
 
-            neighborhoodStart = (cIntervalStart - lines[0].getP1().getX()) / lines[0].getXdiff();
-            neighborhoodEnd = (cIntervalEnd - lines[1].getP1().getX()) / lines[1].getXdiff();
+            neighborhoodStart = (cIntervalStart - lines[0]->getP1()->getX()) / lines[0]->getXdiff();
+            neighborhoodEnd = (cIntervalEnd - lines[1]->getP1()->getX()) / lines[1]->getXdiff();
 
-            cIntervalStart = (cIntervalStart - getP1().getX()) / xdiff;
-            cIntervalEnd = (cIntervalEnd - getP1().getX()) / xdiff;
+            cIntervalStart = (cIntervalStart - getP1()->getX()) / xdiff;
+            cIntervalEnd = (cIntervalEnd - getP1()->getX()) / xdiff;
         }
         auto temp = std::array<double, 4>();
         temp[0] = cIntervalStart;
@@ -201,8 +203,8 @@ public:
  * @return a vertex on this line with parameter t.
  */
     Vertex getVertex(double t) const {
-        return Vertex(p1.getX() + xdiff * t, p1.getY() + ydiff * t,
-            p1.getZ() + zdiff * t);
+        return Vertex(p1->getX() + xdiff * t, p1->getY() + ydiff * t,
+            p1->getZ() + zdiff * t);
     }
 
     // sets curveStart, curveEnd, edgeStart, edgeEnd on edge.
@@ -215,7 +217,7 @@ public:
         double interval[2];
 		interval[0] = std::max(0.0, cIntervalStart);
         if (vstart == -1) {
-            auto in1 = e.getLine().pIntersection(getVertex(interval[0]), eps, true);
+            auto in1 = e.getLine()->pIntersection(getVertex(interval[0]), eps, true);
             if (!(in1.has_value())) {
                 //logger.log(Level.SEVERE, "Problem computing Line intersection: in1.");
                 throw std::runtime_error("Problem computing Line intersection: in1.");
@@ -236,7 +238,7 @@ public:
         }
 		interval[1] = std::min(1.0, cIntervalEnd);
 		if (vend == -1) {
-			auto in2 = e.getLine().pIntersection(getVertex(interval[1]), eps, true);
+			auto in2 = e.getLine()->pIntersection(getVertex(interval[1]), eps, true);
 			if (!(in2.has_value())) {
 				//logger.log(Level.SEVERE, "Problem computing Line intersection: in2.");
 				throw std::runtime_error("Problem computing Line intersection: in2.");
@@ -259,9 +261,9 @@ public:
 		e.setEdgeStart(vstart);
 		e.setEdgeEnd(vend);
     }
-	static std::array<Line, 2> getEpsilonNeighborhood(Line& vline, double eps) {
+	static std::array<LinePtr, 2> getEpsilonNeighborhood(Line& vline, double eps) {
         // compute the equations of boundaries of eps-region around the line
-        std::array<Line,2> lines;
+        std::array<LinePtr,2> lines;
 
         double dTheta;
         if (vline.getXdiff() != 0) {
@@ -277,16 +279,16 @@ public:
         dx = eps * std::cos(dTheta);
         dy = eps * std::sin(dTheta);
 
-        lines[0] = Line(
-            Vertex(vline.getP1().getX() - dx, vline.getP1().getY() - dy, vline.getP1().getZ()),
-            Vertex(vline.getP2().getX() - dx, vline.getP2().getY() - dy, vline.getP2().getZ()));
-        lines[1] = Line(
-            Vertex(vline.getP1().getX() + dx, vline.getP1().getY() + dy, vline.getP1().getZ()),
-            Vertex(vline.getP2().getX() + dx, vline.getP2().getY() + dy, vline.getP2().getZ()));
+        lines[0] = std::shared_ptr<Line>{ new Line(
+            VertexPtr { new Vertex(vline.getP1()->getX() - dx, vline.getP1()->getY() - dy, vline.getP1()->getZ())},
+            VertexPtr { new Vertex(vline.getP2()->getX() - dx, vline.getP2()->getY() - dy, vline.getP2()->getZ())}) };
+        lines[1] = std::shared_ptr<Line>{ new Line(
+            VertexPtr { new Vertex(vline.getP1()->getX() + dx, vline.getP1()->getY() + dy, vline.getP1()->getZ())},
+            VertexPtr { new Vertex(vline.getP2()->getX() + dx, vline.getP2()->getY() + dy, vline.getP2()->getZ())}) };
 
-        if (lines[0].getM() != lines[1].getM()) {
-            lines[0].setM(lines[1].getM());
-            lines[0].setTheta(lines[1].getTheta());
+        if (lines[0]->getM() != lines[1]->getM()) {
+            lines[0]->setM(lines[1]->getM());
+            lines[0]->setTheta(lines[1]->getTheta());
         }
         return lines;
 	}
@@ -302,22 +304,22 @@ public:
         double x1, y1, x2, y2;
         if (std::abs(line.getTheta() - (std::numbers::pi / 2)) <= 1e-36 ) {
             newm = 0;
-            x1 = p1.getX();
-            y1 = line.getP1().getY();
-            x2 = p2.getX();
-            y2 = line.getP2().getY();
+            x1 = p1->getX();
+            y1 = line.getP1()->getY();
+            x2 = p2->getX();
+            y2 = line.getP2()->getY();
         }
-        else if (std::abs(line.getTheta()) <= 1e-36) {
+        else if (isEqual(line.getTheta(),0.0)) {
             newm = 0;
-            x1 = line.getP1().getX();
-            y1 = p1.getY();
-            x2 = line.getP2().getX();
-            y2 = p2.getY();
+            x1 = line.getP1()->getX();
+            y1 = p1->getY();
+            x2 = line.getP2()->getX();
+            y2 = p2->getY();
         }
         else {
             newm = 1 / line.getM();
-            double c1 = line.getP1().getY() + newm * line.getP1().getX();
-            double c2 = line.getP2().getY() + newm * line.getP2().getX();
+            double c1 = line.getP1()->getY() + newm * line.getP1()->getX();
+            double c2 = line.getP2()->getY() + newm * line.getP2()->getX();
 
             x1 = (c1 - c) / (m + newm);
             y1 = m * x1 + c;
@@ -326,20 +328,20 @@ public:
             y2 = m * x2 + c;
         }
 
-        if (std::sqrt((line.getP1().getX() - x1) * (line.getP1().getX() - x1)
-            + (line.getP1().getY() - y1) * (line.getP1().getY() - y1)) > eps) {
+        if (std::sqrt((line.getP1()->getX() - x1) * (line.getP1()->getX() - x1)
+            + (line.getP1()->getY() - y1) * (line.getP1()->getY() - y1)) > eps) {
             return {};
         }
         double intersection1;
         double intersection2;
 
         if (xdiff != 0.0) {
-            intersection1 = (x1 - p1.getX()) / xdiff;
-            intersection2 = (x2 - p1.getX()) / xdiff;
+            intersection1 = (x1 - p1->getX()) / xdiff;
+            intersection2 = (x2 - p1->getX()) / xdiff;
         }
         else {
-            intersection1 = (y1 - p1.getY()) / ydiff;
-            intersection2 = (y2 - p1.getY()) / ydiff;
+            intersection1 = (y1 - p1->getY()) / ydiff;
+            intersection2 = (y2 - p1->getY()) / ydiff;
         }
         t[0] = std::min(intersection1, intersection2);
         t[1] = std::max(intersection1, intersection2);
@@ -366,9 +368,9 @@ public:
  * y1+(y2-y1)*t = (x1+(x2-x1)*t)*m + c (y2-y1)*t - (x2-x1)*t*m = x1*m + c- y1
  * t = (x1*m + c - y1)/((y2-y1)-(x2-x1)*m)
  */
-        Line vline = e.getLine();
+        LinePtr vline = e.getLine();
 
-        auto lines = Line::getEpsilonNeighborhood(vline, eps);
+        auto lines = Line::getEpsilonNeighborhood(*vline, eps);
         double cIntervalStart;
         double cIntervalEnd;
         double neighborhoodStart;
@@ -377,10 +379,10 @@ public:
         double vstart = -1;
         double vend = -1;
 
-        if ((std::abs(theta - vline.getTheta()) <= 1e-36)
-            || (std::abs(std::abs(theta - vline.getTheta()) - 180.0) <= 1e-36) ) {// For parallel lines
+        if (isEqual(theta,vline->getTheta())
+            || (isEqual(theta-vline->getTheta(),180.0)) ) {// For parallel lines
 
-            auto t = getTParallel(vline, eps);
+            auto t = getTParallel(*vline, eps);
 
             if (!(t.has_value())) {
                 return false;
@@ -389,12 +391,12 @@ public:
             cIntervalStart = (*t)[0];
             cIntervalEnd = (*t)[1];
 
-            t = vline.pIntersection(getVertex(cIntervalStart), eps, true);
+            t = vline->pIntersection(getVertex(cIntervalStart), eps, true);
             if (!(t.has_value())) {
                 return false;
             }
             neighborhoodStart = ((*t)[0] + (*t)[1]) / 2.0;
-            t = vline.pIntersection(getVertex(cIntervalEnd), eps, true);
+            t = vline->pIntersection(getVertex(cIntervalEnd), eps, true);
             if (!(t.has_value())) {
                 return false;
             }
@@ -421,9 +423,9 @@ public:
         }
 
         // computing intersection with endpoint p1
-        auto interval1 = pIntersection(vline.getP1(), eps, false);
+        auto interval1 = pIntersection(*(vline->getP1()), eps, false);
         // computing intersection with endpoint p2
-        auto interval2 = pIntersection(vline.getP2(), eps, false);
+        auto interval2 = pIntersection(*(vline->getP2()), eps, false);
 
         double minInterval1 = 0;
         double minInterval2 = 0;
@@ -585,15 +587,15 @@ public:
                 std::abs(-m * p.getX() + p.getY() + c) / std::sqrt(std::pow(m, 2) + 1);
         }
         else {
-            distance = std::abs(p1.getX() - p.getX());
+            distance = std::abs(p1->getX() - p.getX());
         }
 
         auto t = pIntersection(p, distance, false);
 
         if ((!t.has_value()) || (*t)[0] > 1 || (*t)[0] < 0) {
-            return std::min(std::sqrt((p1.getX() - p.getX()) * (p1.getX() - p.getX())
-                + (p1.getY() - p.getY()) * (p1.getY() - p.getY())), std::sqrt((p2.getX() - p.getX())
-                    * (p2.getX() - p.getX()) + (p2.getY() - p.getY()) * (p2.getY() - p.getY())));
+            return std::min(std::sqrt((p1->getX() - p.getX()) * (p1->getX() - p.getX())
+                + (p1->getY() - p.getY()) * (p1->getY() - p.getY())), std::sqrt((p2->getX() - p.getX())
+                    * (p2->getX() - p.getX()) + (p2->getY() - p.getY()) * (p2->getY() - p.getY())));
         }
         else {
             return distance;
@@ -605,10 +607,10 @@ public:
  */
     double tValueOnLine(const Vertex& v) const {
         if (xdiff == 0) {
-            return (v.getY() - p1.getY()) / ydiff;
+            return (v.getY() - p1->getY()) / ydiff;
         }
         else {
-            return (v.getX() - p1.getX()) / xdiff;
+            return (v.getX() - p1->getX()) / xdiff;
         }
     }
 /**
@@ -617,7 +619,7 @@ public:
  */
     bool onLine(const Vertex& v) const {
 
-        if (xdiff == 0 && v.getX() == p1.getX()) {
+        if (xdiff == 0 && v.getX() == p1->getX()) {
             return true;
         }
         else {
@@ -625,3 +627,4 @@ public:
         }
     }
 };
+using LinePtr = std::shared_ptr<Line>;
