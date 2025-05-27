@@ -1,12 +1,13 @@
 #pragma once
 #include "Vertex.hpp"
-#include "Edge.hpp"
+struct Edge;
 #include <cmath>
 #include <optional>
 #include <utility>
 #include <stdexcept>
 #include <array>
 #include <numbers>
+#include <memory>
 constexpr double EqualityCriterion = 1e-36; // Criterion for equality of two doubles
 inline bool isEqual(double a, double b) { return std::abs(a - b) < EqualityCriterion; }
 struct Line {
@@ -625,3 +626,4 @@ public:
         }
     }
 };
+using LinePtr = std::shared_ptr<Line>;
