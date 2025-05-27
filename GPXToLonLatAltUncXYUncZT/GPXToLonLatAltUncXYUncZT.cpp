@@ -9,6 +9,7 @@
 #include <cctype>
 #include "tinyxml2.h"
 #include "rts_smoother.h"
+#include "MapConstruction.hpp"
 
 namespace fs = std::filesystem;
 using namespace tinyxml2;
@@ -123,7 +124,7 @@ int main(int argc, char* argv[]) {
     if (!fs::exists(target)) {
         fs::create_directories(target);
     }
-
+	std::vector<PoseFile> poseFiles;
     for (const auto& entry : fs::directory_iterator(source)) {
         if (!entry.is_regular_file()) continue;
         auto ext = entry.path().extension();
@@ -183,6 +184,7 @@ int main(int argc, char* argv[]) {
 
         smooth(steps, accel_var);
         std::vector<Record> smoothedRecords;
+		std::vector<StepData> smoothedSteps;
         for (const auto& step : steps) {
             auto llh = ecefToGeodetic(step.filtered_state.pos[0],
                 step.filtered_state.pos[1],
@@ -195,12 +197,12 @@ int main(int argc, char* argv[]) {
 				std::sqrt(step.filtered_cov[2][2]), // vacc
 				(long long)step.timestamp // timestamp
 				});
+			smoothedSteps.push_back(step);
         }
-
+		poseFiles.emplace_back(entry.path().filename().string(), smoothedRecords);
         if (!writeSmoothedTrajectory(outPath, smoothedRecords)) {
             std::cerr << "Failed to write " << outPath << "\n";
         }
     }
-    return 0;
 }
 

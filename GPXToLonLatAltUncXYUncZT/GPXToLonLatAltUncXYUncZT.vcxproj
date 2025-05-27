@@ -139,6 +139,7 @@
   <ItemGroup>
     <ClInclude Include="Edge.hpp" />
     <ClInclude Include="Line.hpp" />
+    <ClInclude Include="MapConstruction.hpp" />
     <ClInclude Include="rts_smoother.h" />
     <ClInclude Include="tinyxml2.h" />
     <ClInclude Include="Vertex.hpp" />
