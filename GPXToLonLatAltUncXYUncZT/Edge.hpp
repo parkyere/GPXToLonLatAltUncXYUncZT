@@ -3,7 +3,6 @@
 #include "Line.hpp"
 #include <list>
 #include <vector>
-#include <memory>
 #include <limits>
 #include <compare>
 struct Edge {
@@ -84,12 +83,11 @@ public:
 	std::string toString() const {
 		return vertex1.toString() + vertex2.toString();
 	}
-        std::strong_ordering operator<=>(const Edge& other) const {
-                if (curveStart < other.curveStart) return std::strong_ordering::less;
-                if (curveStart > other.curveStart) return std::strong_ordering::greater;
-                if (curveEnd < other.curveEnd) return std::strong_ordering::less;
-                if (curveEnd > other.curveEnd) return std::strong_ordering::greater;
-                return std::strong_ordering::equal;
-        }
+	std::strong_ordering operator<=>(const Edge& other) const {
+		if (curveStart < other.curveStart) return std::strong_ordering::less;
+		if (curveStart > other.curveStart) return std::strong_ordering::greater;
+		if (curveEnd < other.curveEnd) return std::strong_ordering::less;
+		if (curveEnd > other.curveEnd) return std::strong_ordering::greater;
+		return std::strong_ordering::equal;
+	}
 };
-using EdgePtr = std::shared_ptr<Edge>;

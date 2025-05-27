@@ -66,7 +66,6 @@ struct PoseFile {
 		return poseFile;
 	}
 };
-using MapConstructionPtr = std::shared_ptr<MapConstruction>;
 /**
  * An object that takes a set of poses as input, construct graph and write two
  * files one for vertices and one for edges.
