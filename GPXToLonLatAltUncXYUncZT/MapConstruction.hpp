@@ -32,6 +32,7 @@
 #include <sstream>
 #include <map>
 #include <algorithm>
+#include <memory>
 #include "Vertex.hpp"
 #include "Edge.hpp"
 #include "rts_smoother.h"
@@ -290,4 +291,104 @@ struct MapConstruction {
 		//	+ index);
 		edge.addSplit(newVertexPosition, index);
 	}
+/**
+ * Commits edge splitting listed in List<Integer> Edge.edgeSplitVertices.
+ */
+	void commitEdgeSplits(std::vector<Edge>& edges, std::map<std::string, int>& map,
+		std::vector<Vertex>& graph) {
+
+		if (edges.size() != 2) {
+			// logger.log(Level.SEVERE, "created.");
+			return;
+		}
+		Edge& edge = edges[0];
+
+		for (int i = 0; i < edges[1].getEdgeSplitPositions().size(); i++) {
+			double newPosition = 1 - edges[1].getEdgeSplitPositions()[i];
+			edge.addSplit(newPosition,
+				edges[1].getEdgeSplitVertices()[i]);
+		}
+
+		std::vector<int>& edgeVertexSplits = edge.getEdgeSplitVertices();
+		int splitSize = edgeVertexSplits.size();
+
+		if (splitSize == 0) {
+			return;
+		}
+
+		Vertex& v1 = edge.getVertex1();
+		Vertex& v2 = edge.getVertex2();
+
+		std::string key1 = v1.toString();
+		std::string key2 = v2.toString();
+
+		int index1 = map[key1];
+		int index2 = map[key2];
+
+		bool updateV1 = false, updateV2 = false;
+
+		//logger.log(Level.FINER, "commitEdgeSplits " + splitSize);
+
+		for (int i = 0; i < v1.getDegree(); i++) {
+			if (v1.getAdjacentElementAt(i) == index2) {
+				v1.setAdjacentElementAt(i, edgeVertexSplits[0]);
+				graph[edgeVertexSplits[0]].addElementAdjList(index1);
+				updateV1 = true;
+			}
+		}
+
+		for (int i = 0; i < v2.getDegree(); i++) {
+			if (v2.getAdjacentElementAt(i) == index1) {
+				v2.setAdjacentElementAt(i, edgeVertexSplits[splitSize - 1]);
+				graph[edgeVertexSplits[splitSize - 1]].addElementAdjList(index2);
+				updateV2 = true;
+			}
+		}
+
+		for (int i = 0; i < splitSize - 1; i++) {
+			int currentVertex = edgeVertexSplits[i];
+			int nextVertex = edgeVertexSplits[i + 1];
+			graph[currentVertex].addElementAdjList(nextVertex);
+			graph[nextVertex].addElementAdjList(currentVertex);
+		}
+		if (!(updateV1 && updateV2)) {
+			std::cerr << "inconsistent graph: (" << splitSize << ")"
+				<< index1 << " " << index2 << " " << "\n";
+				//<< v1.getAdjacencyList().toString() << " "
+				//<< v2.getAdjacencyList().toString();
+		}
+	}
+	/**
+	 * Commits edge splitting for all edges.
+	 */
+	//void commitEdgeSplitsAll(std::vector<Vertex>& constructedMap,
+	//	std::map<std::string, int>& map, std::map<std::string, std::unique_ptr<std::vector<Edge>>>& siblingMap,
+	//	std::vector<Edge>& edges) {
+	//	for (int i = 0; i < edges.size(); i++) {
+	//		std::string key1 = edges[i].getVertex1().toString() + " "
+	//			+ edges[i].getVertex2().toString();
+	//		std::string key2 = edges[i].getVertex2().toString() + " "
+	//			+ edges[i].getVertex1().toString();
+
+	//		ArrayList<Edge> siblings1, siblings2;
+	//		if (siblingMap.containsKey(key1))
+	//			siblings1 = siblingMap.get(key1);
+	//		else {
+	//			siblings1 = new ArrayList<Edge>();
+	//		}
+	//		if (siblingMap.containsKey(key2))
+	//			siblings2 = siblingMap.get(key2);
+	//		else {
+	//			siblings2 = new ArrayList<Edge>();
+	//		}
+	//		if (siblings1.size() != 0) {
+	//			this.commitEdgeSplits(siblings1, map, constructedMap);
+	//			siblingMap.remove(key1);
+	//		}
+	//		else if (siblings2.size() != 0) {
+	//			this.commitEdgeSplits(siblings2, map, constructedMap);
+	//			siblingMap.remove(key2);
+	//		}
+	//	}
+	//}
 };
