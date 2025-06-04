@@ -19,7 +19,7 @@ private:
     double m{ 0 }; // slope of the line
     double theta; //smallest angle between x-axis and this Line object
 public:
-	Line() = default;
+	//Line() = default;
     Line(VertexPtr p1, VertexPtr p2)
         : p1{ p1 }, p2{ p2 },
         xdiff{ p2->getX() - p1->getX() },
@@ -146,14 +146,14 @@ public:
         double neighborhoodStart;
         double neighborhoodEnd;
 
-        if (lines[0]->getXdiff() == 0.0) {
+        if (isEqual(lines[0]->getXdiff(),0.0)) {
             // when the edge is a vertical line
             cIntervalStart = m * lines[0]->getP1()->getX() + c;
             cIntervalEnd = m * lines[1]->getP1()->getX() + c;
 
             neighborhoodStart = (cIntervalStart - lines[0]->getP1()->getY()) / lines[0]->getYdiff();
             neighborhoodEnd = (cIntervalEnd - lines[1]->getP1()->getY()) / lines[1]->getYdiff();
-            if (ydiff != 0.0) {
+            if (!isEqual(ydiff,0.0)) {
                 cIntervalStart = (cIntervalStart - getP1()->getY()) / ydiff;
                 cIntervalEnd = (cIntervalEnd - getP1()->getY()) / ydiff;
             }
@@ -161,14 +161,13 @@ public:
                 cIntervalStart = (lines[0]->getP1()->getX() - p1->getX()) / xdiff;
                 cIntervalEnd = (lines[1]->getP1()->getX() - p1->getX()) / xdiff;
             }
-
         }
-        else if (xdiff == 0.0) {
+        else if (isEqual(xdiff,0.0)) {
             // when the line is a vertical line
             cIntervalStart = lines[0]->getM() * getP1()->getX() + lines[0]->getC();
             cIntervalEnd = lines[1]->getM() * getP1()->getX() + lines[1]->getC();
 
-            if (lines[0]->getYdiff() != 0.0) {
+            if (!isEqual(lines[0]->getYdiff(),0.0)) {
                 neighborhoodStart = (cIntervalStart - lines[0]->getP1()->getY()) / lines[0]->getYdiff();
                 neighborhoodEnd = (cIntervalEnd - lines[1]->getP1()->getY()) / lines[1]->getYdiff();
             }
@@ -190,21 +189,16 @@ public:
             cIntervalStart = (cIntervalStart - getP1()->getX()) / xdiff;
             cIntervalEnd = (cIntervalEnd - getP1()->getX()) / xdiff;
         }
-        auto temp = std::array<double, 4>();
-        temp[0] = cIntervalStart;
-        temp[1] = cIntervalEnd;
-        temp[2] = neighborhoodStart;
-        temp[3] = neighborhoodEnd;
-        return temp;
+        return { cIntervalStart , cIntervalEnd , neighborhoodStart, neighborhoodEnd };
     }
  /**
  * Get a Vertex on this line with parameter t.
  * @param t the parameter
  * @return a vertex on this line with parameter t.
  */
-    Vertex getVertex(double t) const {
-        return Vertex(p1->getX() + xdiff * t, p1->getY() + ydiff * t,
-            p1->getZ() + zdiff * t);
+    VertexPtr getVertex(double t) const {
+        return VertexPtr{ new Vertex(p1->getX() + xdiff * t, p1->getY() + ydiff * t,
+            p1->getZ() + zdiff * t) };
     }
 
     // sets curveStart, curveEnd, edgeStart, edgeEnd on edge.
@@ -216,8 +210,8 @@ public:
         double vend) {
         double interval[2];
 		interval[0] = std::max(0.0, cIntervalStart);
-        if (vstart == -1) {
-            auto in1 = e.getLine()->pIntersection(getVertex(interval[0]), eps, true);
+        if (isEqual(vstart,-1)) {
+            auto in1 = e.getLine()->pIntersection(*(getVertex(interval[0])), eps, true);
             if (!(in1.has_value())) {
                 //logger.log(Level.SEVERE, "Problem computing Line intersection: in1.");
                 throw std::runtime_error("Problem computing Line intersection: in1.");
@@ -237,8 +231,8 @@ public:
             }
         }
 		interval[1] = std::min(1.0, cIntervalEnd);
-		if (vend == -1) {
-			auto in2 = e.getLine()->pIntersection(getVertex(interval[1]), eps, true);
+		if (isEqual(vend,-1)) {
+			auto in2 = e.getLine()->pIntersection(*(getVertex(interval[1])), eps, true);
 			if (!(in2.has_value())) {
 				//logger.log(Level.SEVERE, "Problem computing Line intersection: in2.");
 				throw std::runtime_error("Problem computing Line intersection: in2.");
@@ -266,7 +260,7 @@ public:
         std::array<LinePtr,2> lines;
 
         double dTheta;
-        if (vline.getXdiff() != 0) {
+        if (!isEqual(vline.getXdiff(),0.0)) {
             dTheta = std::atan(vline.getM()) + std::numbers::pi / 2.0;
         }
         else if (vline.ydiff > 0.0) {
@@ -279,14 +273,14 @@ public:
         dx = eps * std::cos(dTheta);
         dy = eps * std::sin(dTheta);
 
-        lines[0] = std::shared_ptr<Line>{ new Line(
+        lines[0] = LinePtr{ new Line(
             VertexPtr { new Vertex(vline.getP1()->getX() - dx, vline.getP1()->getY() - dy, vline.getP1()->getZ())},
             VertexPtr { new Vertex(vline.getP2()->getX() - dx, vline.getP2()->getY() - dy, vline.getP2()->getZ())}) };
-        lines[1] = std::shared_ptr<Line>{ new Line(
+        lines[1] = LinePtr{ new Line(
             VertexPtr { new Vertex(vline.getP1()->getX() + dx, vline.getP1()->getY() + dy, vline.getP1()->getZ())},
             VertexPtr { new Vertex(vline.getP2()->getX() + dx, vline.getP2()->getY() + dy, vline.getP2()->getZ())}) };
 
-        if (lines[0]->getM() != lines[1]->getM()) {
+        if (!isEqual(lines[0]->getM(),lines[1]->getM())) {
             lines[0]->setM(lines[1]->getM());
             lines[0]->setTheta(lines[1]->getTheta());
         }
@@ -302,7 +296,7 @@ public:
         double t[2];
         double newm;
         double x1, y1, x2, y2;
-        if (std::abs(line.getTheta() - (std::numbers::pi / 2)) <= 1e-36 ) {
+        if (isEqual(std::abs(line.getTheta()), std::numbers::pi/2) ) {
             newm = 0;
             x1 = p1->getX();
             y1 = line.getP1()->getY();
@@ -335,7 +329,7 @@ public:
         double intersection1;
         double intersection2;
 
-        if (xdiff != 0.0) {
+        if (!isEqual(xdiff,0.0)) {
             intersection1 = (x1 - p1->getX()) / xdiff;
             intersection2 = (x2 - p1->getX()) / xdiff;
         }
@@ -380,7 +374,7 @@ public:
         double vend = -1;
 
         if (isEqual(theta,vline->getTheta())
-            || (isEqual(theta-vline->getTheta(),180.0)) ) {// For parallel lines
+            || (isEqual(std::abs(theta-vline->getTheta()),180.0)) ) {// For parallel lines
 
             auto t = getTParallel(*vline, eps);
 
@@ -391,12 +385,12 @@ public:
             cIntervalStart = (*t)[0];
             cIntervalEnd = (*t)[1];
 
-            t = vline->pIntersection(getVertex(cIntervalStart), eps, true);
+            t = vline->pIntersection(*(getVertex(cIntervalStart)), eps, true);
             if (!(t.has_value())) {
                 return false;
             }
             neighborhoodStart = ((*t)[0] + (*t)[1]) / 2.0;
-            t = vline->pIntersection(getVertex(cIntervalEnd), eps, true);
+            t = vline->pIntersection(*(getVertex(cIntervalEnd)), eps, true);
             if (!(t.has_value())) {
                 return false;
             }
@@ -432,7 +426,7 @@ public:
         double maxInterval1 = 1;
         double maxInterval2 = 1;
         // line doesn't intersect either of the eps-disc at end points
-        if ((!interval1.has_value()) && (!interval2.has_value())) {
+        if ((!(interval1.has_value())) && (!(interval2.has_value()))) {
             // intersection of line and eps-neighborhood of e is non-empty
             if (cIntervalStart > 1 || cIntervalEnd < 0) {
                 return false;
@@ -467,7 +461,7 @@ public:
                 if (minInterval1 <= 1) {
                     cIntervalStart = std::max(cIntervalStart, minInterval1);
                 }
-                if (std::abs(cIntervalStart-minInterval1)<1e-36) {
+                if (isEqual(cIntervalStart,minInterval1)) {
                     vstart = 0;
                 }
             }
@@ -475,14 +469,13 @@ public:
                 if (maxInterval1 >= 0) {
                     cIntervalEnd = std::min(cIntervalEnd, maxInterval1);
                 }
-                if (std::abs(cIntervalEnd - maxInterval1)<1e-36) {
+                if (isEqual(cIntervalEnd,maxInterval1)) {
                     vend = 0;
                 }
             }
         }
         // line doesn't intersect with eps-disc of second end point
         if (interval2.has_value()) {
-
             minInterval2 = std::min((*interval2)[0], (*interval2)[1]);
             maxInterval2 = std::max((*interval2)[0], (*interval2)[1]);
 
@@ -496,7 +489,7 @@ public:
                 if (minInterval2 <= 1) {
                     cIntervalStart = std::max(cIntervalStart, minInterval2);
                 }
-                if (std::abs(cIntervalStart-minInterval2)<1e-36) {
+                if (isEqual(cIntervalStart,minInterval2)) {
                     vstart = 1;
                 }
             }
@@ -582,7 +575,7 @@ public:
  */
     double distance(const Vertex& p) {
         double distance = 0;
-        if (xdiff != 0) {
+        if (!isEqual(xdiff,0)) {
             distance =
                 std::abs(-m * p.getX() + p.getY() + c) / std::sqrt(std::pow(m, 2) + 1);
         }
@@ -606,7 +599,7 @@ public:
  * @return a double value.
  */
     double tValueOnLine(const Vertex& v) const {
-        if (xdiff == 0) {
+        if (isEqual(xdiff,0.0)) {
             return (v.getY() - p1->getY()) / ydiff;
         }
         else {
@@ -619,11 +612,11 @@ public:
  */
     bool onLine(const Vertex& v) const {
 
-        if (xdiff == 0 && v.getX() == p1->getX()) {
+        if (isEqual(xdiff,0.0) && isEqual(v.getX(),p1->getX())) {
             return true;
         }
         else {
-            return (v.getY() - m * v.getX() - c) == 0;
+            return isEqual((v.getY() - m * v.getX() - c),0.0);
         }
     }
 };

@@ -35,8 +35,8 @@ public:
 	double getX() const { return x; }
 	double getY() const { return y; }
 	double getZ() const { return z; }
-	double getLng() const { return lng; }
 	double getLat() const { return lat; }
+	double getLng() const { return lng; }
 	double getAlt() const { return alt; }
 	double norm()   const { return std::sqrt( x*x + y*y + z*z ); }
 	static double dotProd(const Vertex& vector1, const Vertex& vector2) {
@@ -80,7 +80,7 @@ public:
 		double dy = y - v2.getY();
 		return std::sqrt(dx * dx + dy * dy);
 	}
-	void reset() { done = false; }
+	void reset() { done = false; } //resets a vertex's processing state
 	std::string toString() const {
 		return std::format("{0:.8f} {1:.8f} {2:.8f}",x,y,z);
 	}

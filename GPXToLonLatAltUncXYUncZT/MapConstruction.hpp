@@ -39,18 +39,19 @@
 
 struct PoseFile {
 	std::string fileName;
-	std::vector<Vertex> curve;
+	std::shared_ptr<std::vector<VertexPtr>> curve;
 	PoseFile() {
 		fileName = "";
+		curve = std::make_shared<std::vector<VertexPtr>>();
 	}
-	PoseFile(std::string fileName, std::vector<Vertex> curve) 
-		: fileName{ fileName }, curve{ std::move(curve) } {}
+	PoseFile(std::string fileName, std::shared_ptr<std::vector<VertexPtr>> curve) 
+		: fileName{ fileName }, curve{ curve } {}
 	std::string getFileName() const { return fileName; }
-	std::vector<Vertex>& getPose() { return curve; }
+	std::vector<VertexPtr>& getPose() { return *curve; }
 	double getLength() {
 		double length = 0.0;
-		for (size_t i = 1; i < curve.size(); ++i) {
-			length += curve[i - 1].dist(curve[i]);
+		for (size_t i = 1; i < curve->size(); ++i) {
+			length += (*curve)[i - 1]->dist(*((*curve)[i]));
 		}
 		return length;
 	}
@@ -58,10 +59,9 @@ struct PoseFile {
 		PoseFile poseFile;
 		poseFile.fileName = fileName;
 		for (auto& v : SmoothedTrajectory) {
-			Vertex vertex(v.filtered_state.pos[0], v.filtered_state.pos[1],
+			poseFile.curve->emplace_back(new Vertex(v.filtered_state.pos[0], v.filtered_state.pos[1],
 				hasAltitude ? v.filtered_state.pos[2] : 0.0,
-				v.timestamp);
-			poseFile.curve.push_back(vertex);
+				v.timestamp));
 		}
 		return poseFile;
 	}
@@ -71,13 +71,13 @@ struct PoseFile {
  * files one for vertices and one for edges.
  */
 struct MapConstruction {
-	static int curveid;
-	static std::string curveName;
+	static int curveid;				// counter for pose
+	static std::string curveName;	// file name for pose
 /**
  * Writes the constructed map into files.
  */
 
-	static void writeToFile(std::vector<Vertex> vList, std::string fileName) {
+	static void writeToFile(std::vector<VertexPtr>& vList, std::string& fileName) {
 		try {
 			int count = 0;
 			std::ostringstream bwedges;
@@ -87,7 +87,7 @@ struct MapConstruction {
 				return;
 			}
 			for (int i = 0; i < vList.size(); i++) {
-				Vertex& v = vList[i];
+				Vertex& v = *(vList[i]);
 				auto llh = ecefToGeodetic(v.getX(), v.getY(), v.getZ());
 				bvertex << std::format("{0}, {1:.8f}, {2:.8f}, {3:.8f}\n", i, llh[0], llh[1], llh[2]);
 				for (int j = 0; j < v.getDegree(); j++) {
@@ -124,9 +124,10 @@ struct MapConstruction {
  * (currentIndex-1)-th and currentIndex-th vertices of pose and return true
  * if edge e has a part of white interval else false.
  */
-	bool isWhiteInterval(Edge& edge, std::vector<Vertex>& pose, int currentIndex, double eps, double altEps) {
+	bool isWhiteInterval(Edge& edge, std::vector<VertexPtr>& pose,
+		int currentIndex, double eps, double altEps) {
 		Line line(pose[currentIndex - 1], pose[currentIndex]);
-		if (std::abs(line.avgAltitude() - edge.getLine().avgAltitude()) <= altEps) {
+		if (std::abs(line.avgAltitude() - edge.getLine()->avgAltitude()) <= altEps) {
 			return line.pIntersection(edge, eps);
 		}
 		else {
@@ -149,7 +150,7 @@ struct MapConstruction {
 	 * Scans for next white interval on an Edge starting from index newstart of
 	 * pose.
 	 */
-	void computeNextInterval(Edge& edge, std::vector<Vertex>& pose, int newstart,
+	void computeNextInterval(Edge& edge, std::vector<VertexPtr>& pose, int newstart,
 		double eps, double altEps) {
 		// Compute next white interval on edge.
 		bool first = true;
@@ -218,16 +219,16 @@ struct MapConstruction {
  * Updates constructedMap by adding an Edge. Detail description of the
  * algorithm is in the publication.
  */
-	void updateMap(std::vector<Vertex>& constructedMap,
+	void updateMap(std::vector<VertexPtr>& constructedMap,
 		std::map<std::string, int>& map, Edge& edge) {
 
 		// update the map by adding a new edge
-		Vertex v;
+		VertexPtr v;
 		int parent = -1;
 		int child = -1;
 
-		std::string keyParent = edge.getVertex1().toString();
-		std::string keyChild = edge.getVertex2().toString();
+		std::string keyParent = edge.getVertex1()->toString();
+		std::string keyChild = edge.getVertex2()->toString();
 		// find the index of parent node
 		if (map.contains(keyParent)) {
 			parent = map[keyParent];
@@ -253,8 +254,8 @@ struct MapConstruction {
 			std::cerr << "inconsistent graph child, parent :" << child << ", " << parent << std::endl;
 		}
 		else if (parent != child) {
-			constructedMap[parent].addElementAdjList(child);
-			constructedMap[child].addElementAdjList(parent);
+			constructedMap[parent]->addElementAdjList(child);
+			constructedMap[child]->addElementAdjList(parent);
 			//logger.log(Level.FINEST, "child, parent :" + child + ", " + parent);
 			//logger.log(Level.FINEST, "child, parent :" + parent + ", " + child);
 		}
@@ -265,23 +266,23 @@ struct MapConstruction {
  * @param newVertexPosition
  *            represents position of a new Vertex
  */
-	void edgeSplit(std::vector<Vertex>& constructedMap,
+	void edgeSplit(std::vector<VertexPtr>& constructedMap,
 		std::map<std::string, int>& map, Edge& edge, double newVertexPosition) {
-		Vertex v1 = edge.getVertex1();
-		Vertex v2 = edge.getVertex2();
+		VertexPtr v1 = edge.getVertex1();
+		VertexPtr v2 = edge.getVertex2();
 
-		auto key1 = v1.toString();
-		auto key2 = v2.toString();
+		auto key1 = v1->toString();
+		auto key2 = v2->toString();
 
 		// call of this method always after updateMap which ensures
 		// map.containsKey(key1) is
 		// always true.
 		int index1 = map[key1];
 		int index2 = map[key2];
-		Vertex v = edge.getLine().getVertex(newVertexPosition);
+		VertexPtr v = edge.getLine()->getVertex(newVertexPosition);
 
 		// splitting an edge on split point vertex v
-		auto key = v.toString();
+		auto key = v->toString();
 		int index = map[key];
 
 		if (index == index1 || index == index2) {
@@ -294,19 +295,19 @@ struct MapConstruction {
 /**
  * Commits edge splitting listed in List<Integer> Edge.edgeSplitVertices.
  */
-	void commitEdgeSplits(std::vector<Edge>& edges, std::map<std::string, int>& map,
-		std::vector<Vertex>& graph) {
+	void commitEdgeSplits(std::vector<EdgePtr>& edges, std::map<std::string, int>& map,
+		std::vector<VertexPtr>& graph) {
 
 		if (edges.size() != 2) {
 			// logger.log(Level.SEVERE, "created.");
 			return;
 		}
-		Edge& edge = edges[0];
+		Edge& edge = *(edges[0]);
 
-		for (int i = 0; i < edges[1].getEdgeSplitPositions().size(); i++) {
-			double newPosition = 1 - edges[1].getEdgeSplitPositions()[i];
+		for (int i = 0; i < edges[1]->getEdgeSplitPositions().size(); i++) {
+			double newPosition = 1 - edges[1]->getEdgeSplitPositions()[i];
 			edge.addSplit(newPosition,
-				edges[1].getEdgeSplitVertices()[i]);
+				edges[1]->getEdgeSplitVertices()[i]);
 		}
 
 		std::vector<int>& edgeVertexSplits = edge.getEdgeSplitVertices();
@@ -316,8 +317,8 @@ struct MapConstruction {
 			return;
 		}
 
-		Vertex& v1 = edge.getVertex1();
-		Vertex& v2 = edge.getVertex2();
+		Vertex& v1 = *(edge.getVertex1());
+		Vertex& v2 = *(edge.getVertex2());
 
 		std::string key1 = v1.toString();
 		std::string key2 = v2.toString();
@@ -332,7 +333,7 @@ struct MapConstruction {
 		for (int i = 0; i < v1.getDegree(); i++) {
 			if (v1.getAdjacentElementAt(i) == index2) {
 				v1.setAdjacentElementAt(i, edgeVertexSplits[0]);
-				graph[edgeVertexSplits[0]].addElementAdjList(index1);
+				graph[edgeVertexSplits[0]]->addElementAdjList(index1);
 				updateV1 = true;
 			}
 		}
@@ -340,7 +341,7 @@ struct MapConstruction {
 		for (int i = 0; i < v2.getDegree(); i++) {
 			if (v2.getAdjacentElementAt(i) == index1) {
 				v2.setAdjacentElementAt(i, edgeVertexSplits[splitSize - 1]);
-				graph[edgeVertexSplits[splitSize - 1]].addElementAdjList(index2);
+				graph[edgeVertexSplits[splitSize - 1]]->addElementAdjList(index2);
 				updateV2 = true;
 			}
 		}
@@ -348,8 +349,8 @@ struct MapConstruction {
 		for (int i = 0; i < splitSize - 1; i++) {
 			int currentVertex = edgeVertexSplits[i];
 			int nextVertex = edgeVertexSplits[i + 1];
-			graph[currentVertex].addElementAdjList(nextVertex);
-			graph[nextVertex].addElementAdjList(currentVertex);
+			graph[currentVertex]->addElementAdjList(nextVertex);
+			graph[nextVertex]->addElementAdjList(currentVertex);
 		}
 		if (!(updateV1 && updateV2)) {
 			std::cerr << "inconsistent graph: (" << splitSize << ")"
@@ -361,34 +362,34 @@ struct MapConstruction {
 	/**
 	 * Commits edge splitting for all edges.
 	 */
-	//void commitEdgeSplitsAll(std::vector<Vertex>& constructedMap,
-	//	std::map<std::string, int>& map, std::map<std::string, std::unique_ptr<std::vector<Edge>>>& siblingMap,
-	//	std::vector<Edge>& edges) {
-	//	for (int i = 0; i < edges.size(); i++) {
-	//		std::string key1 = edges[i].getVertex1().toString() + " "
-	//			+ edges[i].getVertex2().toString();
-	//		std::string key2 = edges[i].getVertex2().toString() + " "
-	//			+ edges[i].getVertex1().toString();
+	void commitEdgeSplitsAll(std::vector<VertexPtr>& constructedMap,
+		std::map<std::string, int>& map, std::map<std::string, std::shared_ptr<std::vector<EdgePtr>>>& siblingMap,
+		std::vector<EdgePtr>& edges) {
+		for (int i = 0; i < edges.size(); i++) {
+			std::string key1 = edges[i]->getVertex1()->toString() + " "
+				+ edges[i]->getVertex2()->toString();
+			std::string key2 = edges[i]->getVertex2()->toString() + " "
+				+ edges[i]->getVertex1()->toString();
 
-	//		ArrayList<Edge> siblings1, siblings2;
-	//		if (siblingMap.containsKey(key1))
-	//			siblings1 = siblingMap.get(key1);
-	//		else {
-	//			siblings1 = new ArrayList<Edge>();
-	//		}
-	//		if (siblingMap.containsKey(key2))
-	//			siblings2 = siblingMap.get(key2);
-	//		else {
-	//			siblings2 = new ArrayList<Edge>();
-	//		}
-	//		if (siblings1.size() != 0) {
-	//			this.commitEdgeSplits(siblings1, map, constructedMap);
-	//			siblingMap.remove(key1);
-	//		}
-	//		else if (siblings2.size() != 0) {
-	//			this.commitEdgeSplits(siblings2, map, constructedMap);
-	//			siblingMap.remove(key2);
-	//		}
-	//	}
-	//}
+			std::vector<EdgePtr> siblings1, siblings2;
+			if (siblingMap.contains(key1))
+				siblings1 = std::weak_ptr<std::vector<EdgePtr>>(&(siblingMap[key1]));
+			else {
+				siblings1 = new ArrayList<Edge>();
+			}
+			if (siblingMap.containsKey(key2))
+				siblings2 = siblingMap.get(key2);
+			else {
+				siblings2 = new ArrayList<Edge>();
+			}
+			if (siblings1.size() != 0) {
+				this.commitEdgeSplits(siblings1, map, constructedMap);
+				siblingMap.remove(key1);
+			}
+			else if (siblings2.size() != 0) {
+				this.commitEdgeSplits(siblings2, map, constructedMap);
+				siblingMap.remove(key2);
+			}
+		}
+	}
 };
