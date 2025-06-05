@@ -34,6 +34,7 @@
 #include <algorithm>
 #include <memory>
 #include "Vertex.hpp"
+#include "Line.hpp"
 #include "Edge.hpp"
 #include "rts_smoother.h"
 
@@ -59,9 +60,9 @@ struct PoseFile {
 		PoseFile poseFile;
 		poseFile.fileName = fileName;
 		for (auto& v : SmoothedTrajectory) {
-			poseFile.curve->emplace_back(new Vertex(v.filtered_state.pos[0], v.filtered_state.pos[1],
+			poseFile.curve->push_back(VertexPtr{ new Vertex(v.filtered_state.pos[0], v.filtered_state.pos[1],
 				hasAltitude ? v.filtered_state.pos[2] : 0.0,
-				v.timestamp));
+				v.timestamp) });
 		}
 		return poseFile;
 	}
@@ -220,7 +221,7 @@ struct MapConstruction {
  * algorithm is in the publication.
  */
 	void updateMap(std::vector<VertexPtr>& constructedMap,
-		std::map<std::string, int>& map, Edge& edge) {
+		std::map<std::string, int>& map, const Edge& edge) {
 
 		// update the map by adding a new edge
 		VertexPtr v;
@@ -371,25 +372,37 @@ struct MapConstruction {
 			std::string key2 = edges[i]->getVertex2()->toString() + " "
 				+ edges[i]->getVertex1()->toString();
 
-			std::vector<EdgePtr> siblings1, siblings2;
+			std::shared_ptr<std::vector<EdgePtr>> siblings1, siblings2;
 			if (siblingMap.contains(key1))
-				siblings1 = std::weak_ptr<std::vector<EdgePtr>>(&(siblingMap[key1]));
+				siblings1 = siblingMap[key1];
 			else {
-				siblings1 = new ArrayList<Edge>();
+				siblings1 = std::shared_ptr<std::vector<EdgePtr>>{new std::vector<EdgePtr>()};
 			}
-			if (siblingMap.containsKey(key2))
-				siblings2 = siblingMap.get(key2);
+			if (siblingMap.contains(key2))
+				siblings2 = siblingMap[key2];
 			else {
-				siblings2 = new ArrayList<Edge>();
+				siblings2 = std::shared_ptr<std::vector<EdgePtr>>{ new std::vector<EdgePtr>() };
 			}
-			if (siblings1.size() != 0) {
-				this.commitEdgeSplits(siblings1, map, constructedMap);
-				siblingMap.remove(key1);
+			if (siblings1->size() != 0) {
+				commitEdgeSplits(*siblings1, map, constructedMap);
+				siblingMap.erase(key1);
 			}
-			else if (siblings2.size() != 0) {
-				this.commitEdgeSplits(siblings2, map, constructedMap);
-				siblingMap.remove(key2);
+			else if (siblings2->size() != 0) {
+				commitEdgeSplits(*siblings2, map, constructedMap);
+				siblingMap.erase(key2);
 			}
 		}
+	}
+/**
+ * Adds a portion of a pose as edges into constructedMap.
+ */
+
+	void addToGraph(std::vector<VertexPtr>& constructedMap, std::vector<VertexPtr>& pose,
+		std::map<std::string, int>& map, int startIndex, int endIndex) {
+		for (int i = startIndex; i < endIndex; i++) {
+			updateMap(constructedMap, map,
+				Edge(pose[i], pose[i + 1]));
+		}
+
 	}
 };

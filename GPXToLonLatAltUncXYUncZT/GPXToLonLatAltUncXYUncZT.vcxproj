@@ -133,10 +133,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Edge.cpp" />
     <ClCompile Include="GPXToLonLatAltUncXYUncZT.cpp" />
+    <ClCompile Include="Line.cpp" />
     <ClCompile Include="tinyxml2.cpp" />
+    <ClCompile Include="Vertex.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Common.hpp" />
     <ClInclude Include="Edge.hpp" />
     <ClInclude Include="Line.hpp" />
     <ClInclude Include="MapConstruction.hpp" />

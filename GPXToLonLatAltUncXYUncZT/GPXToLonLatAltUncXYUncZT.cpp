@@ -185,6 +185,7 @@ int main(int argc, char* argv[]) {
         smooth(steps, accel_var);
         std::vector<Record> smoothedRecords;
 		std::vector<StepData> smoothedSteps;
+
         for (const auto& step : steps) {
             auto llh = ecefToGeodetic(step.filtered_state.pos[0],
                 step.filtered_state.pos[1],
@@ -199,7 +200,7 @@ int main(int argc, char* argv[]) {
 				});
 			smoothedSteps.push_back(step);
         }
-		poseFiles.emplace_back(entry.path().filename().string(), smoothedRecords);
+		poseFiles.push_back(PoseFile::readFile(entry.path().filename().string(), smoothedSteps));
         if (!writeSmoothedTrajectory(outPath, smoothedRecords)) {
             std::cerr << "Failed to write " << outPath << "\n";
         }
