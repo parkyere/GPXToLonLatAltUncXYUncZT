@@ -205,5 +205,6 @@ int main(int argc, char* argv[]) {
             std::cerr << "Failed to write " << outPath << "\n";
         }
     }
+
 }
 

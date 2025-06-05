@@ -33,6 +33,7 @@
 #include <map>
 #include <algorithm>
 #include <memory>
+#include <queue>
 #include "Vertex.hpp"
 #include "Line.hpp"
 #include "Edge.hpp"
@@ -403,6 +404,288 @@ struct MapConstruction {
 			updateMap(constructedMap, map,
 				Edge(pose[i], pose[i + 1]));
 		}
+	}
+	/**
+ * Updates siblingHashmap for an edge.
+ */
 
+	void updateSiblingHashMap(std::map<std::string, std::shared_ptr<std::vector<EdgePtr>>>& siblingMap,
+		EdgePtr edge) {
+		std::string key1 = edge->getVertex1()->toString() + " "
+			+ edge->getVertex2()->toString();
+		std::string key2 = edge->getVertex2()->toString() + " "
+			+ edge->getVertex1()->toString();
+		std::shared_ptr<std::vector<EdgePtr>> siblings1, siblings2;
+		if (siblingMap.contains(key1)) {
+			siblings1 = siblingMap[key1];
+		}
+		else {
+			siblings1 = std::shared_ptr<std::vector<EdgePtr>>{ new std::vector<EdgePtr>() };
+		}
+		if (siblingMap.contains(key2)) { //key1??
+			siblings2 = siblingMap[key2];
+		}
+		else {
+			siblings2 = std::shared_ptr<std::vector<EdgePtr>>{ new std::vector<EdgePtr>() };
+		}
+
+		if (siblings1->size() == 0 && siblings2->size() == 0) {
+			siblingMap[key1]= std::shared_ptr<std::vector<EdgePtr>>{ new std::vector<EdgePtr>() };
+			siblingMap[key1]->push_back(edge);
+		}
+		else if (siblings1->size() != 0) {
+			siblings1->push_back(edge);
+		}
+		else if (siblings2->size() != 0) {
+			siblings2->push_back(edge);
+		}
+	}
+	/**
+ * Update the map for a pose/curve. Definition of black and white interval.
+ */
+ // @TODO(mahmuda): extract some shorter well-named methods.
+	void mapConstruction(std::vector<VertexPtr>& constructedMap, std::vector<EdgePtr>& edges,
+		std::map<std::string, int>& map, std::vector<VertexPtr>& pose, double eps,
+		double altEps) {
+
+		//std::priority_queue < EdgePtr,  > pq([](const EdgePtr& a, const EdgePtr& b) {return *a < *b;});
+        // 기존 Java 코드의 PriorityQueue를 C++로 변환
+        // 아래와 같이 std::priority_queue를 정의해야 합니다.
+        // EdgePtr의 우선순위는 Edge의 operator<를 사용하여 비교합니다.
+
+        std::priority_queue<EdgePtr, std::vector<EdgePtr>, 
+            bool(*)(const EdgePtr&, const EdgePtr&)> pq(
+                [](const EdgePtr& a, const EdgePtr& b) { return *a < *b; }
+            );
+		for (int i = 0; i < edges.size(); i++) {
+			computeNextInterval(*(edges[i]), pose, 1, eps, altEps);
+			if (!(edges[i]->getDone())) {
+				pq.push(edges[i]);
+			}
+		}
+		try {
+
+			// The whole curve will be added as an edge because no white
+			// interval
+
+			if (pq.empty()) {
+
+				//logger.log(Level.FINER, MapConstruction.curveName
+				//	+ " inserted as an edge");
+
+				addToGraph(constructedMap, pose, map, 0, pose.size() - 1);
+
+				std::cout << curveName
+					<< " inserted as an edge\n";
+				return;
+			}
+
+			EdgePtr edge = pq.top(); pq.pop();
+
+			double cend = edge->getCurveEnd();
+			EdgePtr cedge = edge;
+
+			// There is a black interval until edge.curveStart
+
+			if (edge->getCurveStart() > 0) {
+
+				std::cout << curveName
+					<< " inserted as an edge until " << edge->getCurveStart();
+
+				int index = (int)std::floor(edge->getCurveStart());
+
+				addToGraph(constructedMap, pose, map, 0, index);
+
+				LinePtr newLine = LinePtr{ new Line(pose[index], pose[index + 1]) };
+				double t = edge->getCurveStart()
+					- std::floor(edge->getCurveStart());
+				updateMap(constructedMap, map, Edge(pose[index],
+					newLine->getVertex(t)));
+
+				updateMap(constructedMap, map,
+					Edge(newLine->getVertex(t), edge->getLine()
+						->getVertex(edge->getEdgeStart())));
+				edgeSplit(constructedMap, map, *edge, edge->getEdgeStart());
+			}
+
+			// the while loop will search through all the intervals until we
+			// reach the end of the pose
+
+			while (cend < pose.size()) {
+
+				/*logger.log(Level.FINEST, MapConstruction.curveName
+					+ " has white interval " + edge.getCurveStart() + " "
+					+ edge.getCurveEnd() + " " + cend);*/
+
+				if (cend < edge->getCurveEnd()) {
+					cend = edge->getCurveEnd();
+					cedge = edge;
+				}
+
+				if (isEqual(edge->getCurveEnd() ,pose.size() - 1)) {
+					std::cout << curveName <<
+						" processing completed.\n";
+					return;
+				}
+
+				computeNextInterval(*edge, pose,
+					edge->getCurveEndIndex() + 1, eps, altEps);
+
+				if (!(edge->getDone())) {
+					pq.push(edge);
+				}
+
+				if (pq.empty()) {
+					std::cout << curveName
+						<< " inserted as an edge from " << cend << " to end\n";
+
+					int index = (int)std::floor(cend);
+					LinePtr newLine = LinePtr{ new Line(pose[index],
+						pose[index + 1]) };
+					double t = cend - std::floor(cend);
+					updateMap(
+						constructedMap,
+						map,
+						Edge(cedge->getLine()->getVertex(
+							cedge->getEdgeEnd()), newLine->getVertex(t)));
+					edgeSplit(constructedMap, map, *cedge,
+						cedge->getEdgeEnd());
+					updateMap(constructedMap, map,
+						Edge(newLine->getVertex(t), pose[index + 1]));
+					addToGraph(constructedMap, pose, map, index + 1,
+						pose.size() - 1);
+					return;
+				}
+
+				edge = pq.top(); pq.pop();
+
+				if (edge->getCurveStart() > cend) {
+					std::cout << curveName
+						<< " inserted as an edge from " << cend << " to "
+						<< edge->getCurveStart()<<'\n';
+
+					// need to add rest of the line segment
+
+					int index = (int)std::floor(cend);
+					int indexStart = (int)std::floor(edge->getCurveStart());
+					LinePtr newLine = LinePtr{ new Line(pose[index],
+						pose[index + 1]) };
+					double t = cend - std::floor(cend);
+
+					updateMap(
+						constructedMap,
+						map,
+						Edge(cedge->getLine()->getVertex(
+							cedge->getEdgeEnd()), newLine->getVertex(t)));
+					edgeSplit(constructedMap, map, *cedge,
+						cedge->getEdgeEnd());
+
+					if (index == indexStart) {
+						updateMap(
+							constructedMap,
+							map,
+							Edge(newLine->getVertex(t),
+								newLine->getVertex(edge->getCurveStart()
+									- index)));
+						index = (int)std::floor(edge->getCurveStart());
+						newLine = LinePtr{ new Line(pose[index], pose[index + 1]) };
+						t = edge->getCurveStart()
+							- std::floor(edge->getCurveStart());
+					}
+					else {
+						updateMap(
+							constructedMap,
+							map,
+							Edge(newLine->getVertex(t), pose
+								[index + 1]));
+
+						addToGraph(constructedMap, pose, map, index + 1,
+							(int)std::floor(edge->getCurveStart()));
+						index = (int)std::floor(edge->getCurveStart());
+						newLine = LinePtr{ new Line(pose[index], pose[index + 1]) };
+						t = edge->getCurveStart()
+							- std::floor(edge->getCurveStart());
+						updateMap(constructedMap, map,
+							Edge(pose[index], newLine->getVertex(t)));
+
+					}
+					updateMap(constructedMap, map,
+						Edge(newLine->getVertex(t), edge->getLine()
+							->getVertex(edge->getEdgeStart())));
+					edgeSplit(constructedMap, map, *edge,
+						edge->getEdgeStart());
+				}
+			}
+		}
+		catch (std::exception& ex) {
+			std::cerr << "Error in map construction: " << ex.what() << std::endl;
+			//logger.log(Level.SEVERE, ex.toString());
+			throw ex;//new RuntimeException(ex);
+		}
+		return;
+	}
+	/**
+	 * Constructs map from poses and returns string representation of the map.
+	 */
+
+	std::vector<VertexPtr> constructMapMain(std::vector<PoseFile>& poseFiles, double eps,
+		double altEps) {
+
+		std::vector<VertexPtr> constructedMap;
+		// map contains mapping between vertex keys and their indices in
+		// constructedMap
+		std::map<std::string, int> map;
+		try {
+			double length = 0;
+
+			// generate list of files in the folder to process
+			for (int k = 0; k < poseFiles.size(); k++) {
+				//Long startTime = System.currentTimeMillis();
+				curveid = k;
+				curveName = poseFiles[k].getFileName();
+
+				length += poseFiles[k].getLength();
+
+				if (poseFiles[k].getPose().size() < 2) {
+					continue;
+				}
+
+				std::vector<EdgePtr> edges;// = new ArrayList<Edge>();
+
+				/*
+				 * siblingMap contains map of key and sibling edges, sibling
+				 * edges are line segments between two vertices but going in
+				 * opposite direction.
+				 */
+				std::map<std::string, std::shared_ptr<std::vector<EdgePtr>>> siblingMap;// = new HashMap<String, ArrayList<Edge>>();
+
+				for (int i = 0; i < constructedMap.size(); i++) {
+					VertexPtr v = constructedMap[i];
+					for (int j = 0; j < v->getDegree(); j++) {
+						VertexPtr v1 = constructedMap.at(v->getAdjacentElementAt(j));
+						if (!(v.get() == v1.get())) {
+							EdgePtr newEdge = EdgePtr{ new Edge(v, v1) };
+							edges.push_back(newEdge);
+							updateSiblingHashMap(siblingMap, newEdge);
+						}
+					}
+				}
+
+				mapConstruction(constructedMap, edges, map,
+					poseFiles[k].getPose(), eps, altEps);
+				commitEdgeSplitsAll(constructedMap, map, siblingMap, edges);
+
+				//logger.info("k :" + k + " " + MapConstruction.curveName + " "
+				//	+ length + " :"
+				//	+ (System.currentTimeMillis() - startTime) / 60000.00);
+
+			}
+		}
+		catch (std::exception& e) {
+			std::cerr << "Error in map construction: " << e.what() << std::endl;
+			//logger.log(Level.SEVERE, e.toString());
+			throw e;
+		}
+		return constructedMap;
 	}
 };
