@@ -1,11 +1,7 @@
 #ifndef RTS_SMOOTHER_H
 #define RTS_SMOOTHER_H
+#include "Common.hpp"
 
-#include <array>
-#include <vector>
-#include <cmath>
-#include <stdexcept>
-#include <numbers>
 struct GPSMeasurement {
     double lat;       // degrees
     double lon;       // degrees
@@ -34,11 +30,11 @@ struct StepData {
 };
 
 // Convert degrees to radians
-inline double deg2rad(double deg) { return deg * std::numbers::pi / 180.0; }
-inline double rad2deg(double rad) { return rad * 180.0 / std::numbers::pi; }
+ double deg2rad(double deg) { return deg * std::numbers::pi / 180.0; }
+ double rad2deg(double rad) { return rad * 180.0 / std::numbers::pi; }
 
 // Convert geodetic coordinates to ECEF (WGS84)
-inline std::array<double,3> geodeticToECEF(double lat_deg, double lon_deg, double alt_m) {
+ std::array<double,3> geodeticToECEF(double lat_deg, double lon_deg, double alt_m) {
     const double a = 6378137.0; // WGS84 major axis
     const double e2 = 6.69437999014e-3;
     double lat = deg2rad(lat_deg);
@@ -51,7 +47,7 @@ inline std::array<double,3> geodeticToECEF(double lat_deg, double lon_deg, doubl
 }
 
 // Convert ECEF coordinates to geodetic (WGS84)
-inline std::array<double,3> ecefToGeodetic(double x, double y, double z) {
+ std::array<double,3> ecefToGeodetic(double x, double y, double z) {
     const double a = 6378137.0; // WGS84 major axis
     const double e2 = 6.69437999014e-3;
     const double b = a * std::sqrt(1.0 - e2);
@@ -68,7 +64,7 @@ inline std::array<double,3> ecefToGeodetic(double x, double y, double z) {
     return {rad2deg(lat), rad2deg(lon), alt};
 }
 
-inline void estimateUncertainties(std::vector<GPSMeasurement>& meas) {
+ void estimateUncertainties(std::vector<GPSMeasurement>& meas) {
     if(meas.empty()) return;
     for(size_t i=0;i<meas.size();++i) {
         if(meas[i].has_std) continue;
@@ -96,7 +92,7 @@ inline void estimateUncertainties(std::vector<GPSMeasurement>& meas) {
     }
 }
 
-inline Matrix3 inverse3(const Matrix3& m) {
+ Matrix3 inverse3(const Matrix3& m) {
     double a = m[0][0], b = m[0][1], c = m[0][2];
     double d = m[1][0], e = m[1][1], f = m[1][2];
     double g = m[2][0], h = m[2][1], i = m[2][2];
@@ -115,13 +111,13 @@ inline Matrix3 inverse3(const Matrix3& m) {
     return inv;
 }
 
-inline Matrix6 identity6() {
+ Matrix6 identity6() {
     Matrix6 I{};
     for(int i=0;i<6;++i) for(int j=0;j<6;++j) I[i][j] = (i==j) ? 1.0 : 0.0;
     return I;
 }
 
-inline Matrix6 transpose6(const Matrix6& m) {
+ Matrix6 transpose6(const Matrix6& m) {
     Matrix6 t{};
     for(int i=0;i<6;++i)
         for(int j=0;j<6;++j)
@@ -129,7 +125,7 @@ inline Matrix6 transpose6(const Matrix6& m) {
     return t;
 }
 
-inline Matrix3 transpose3(const Matrix3& m) {
+ Matrix3 transpose3(const Matrix3& m) {
     Matrix3 t{};
     for(int i=0;i<3;++i)
         for(int j=0;j<3;++j)
@@ -137,7 +133,7 @@ inline Matrix3 transpose3(const Matrix3& m) {
     return t;
 }
 
-inline Matrix6 multiply6(const Matrix6& a, const Matrix6& b) {
+ Matrix6 multiply6(const Matrix6& a, const Matrix6& b) {
     Matrix6 r{};
     for(int i=0;i<6;++i)
         for(int j=0;j<6;++j) {
@@ -148,7 +144,7 @@ inline Matrix6 multiply6(const Matrix6& a, const Matrix6& b) {
     return r;
 }
 
-inline std::array<double,6> multiply6(const Matrix6& a, const std::array<double,6>& v) {
+ std::array<double,6> multiply6(const Matrix6& a, const std::array<double,6>& v) {
     std::array<double,6> r{};
     for(int i=0;i<6;++i) {
         double sum=0.0;
@@ -158,7 +154,7 @@ inline std::array<double,6> multiply6(const Matrix6& a, const std::array<double,
     return r;
 }
 
-inline Matrix3 multiply3(const Matrix3& a, const Matrix3& b) {
+ Matrix3 multiply3(const Matrix3& a, const Matrix3& b) {
     Matrix3 r{};
     for(int i=0;i<3;++i)
         for(int j=0;j<3;++j) {
@@ -169,7 +165,7 @@ inline Matrix3 multiply3(const Matrix3& a, const Matrix3& b) {
     return r;
 }
 
-inline std::array<double,3> multiply3(const Matrix3& a, const std::array<double,3>& v) {
+ std::array<double,3> multiply3(const Matrix3& a, const std::array<double,3>& v) {
     std::array<double,3> r{};
     for(int i=0;i<3;++i) {
         double sum=0.0;
@@ -179,7 +175,7 @@ inline std::array<double,3> multiply3(const Matrix3& a, const std::array<double,
     return r;
 }
 
-inline Matrix6 add6(const Matrix6& a, const Matrix6& b) {
+ Matrix6 add6(const Matrix6& a, const Matrix6& b) {
     Matrix6 r{};
     for(int i=0;i<6;++i)
         for(int j=0;j<6;++j)
@@ -187,7 +183,7 @@ inline Matrix6 add6(const Matrix6& a, const Matrix6& b) {
     return r;
 }
 
-inline Matrix6 subtract6(const Matrix6& a, const Matrix6& b) {
+ Matrix6 subtract6(const Matrix6& a, const Matrix6& b) {
     Matrix6 r{};
     for(int i=0;i<6;++i)
         for(int j=0;j<6;++j)
@@ -195,7 +191,7 @@ inline Matrix6 subtract6(const Matrix6& a, const Matrix6& b) {
     return r;
 }
 
-inline Matrix3 add3(const Matrix3& a, const Matrix3& b) {
+ Matrix3 add3(const Matrix3& a, const Matrix3& b) {
     Matrix3 r{};
     for(int i=0;i<3;++i)
         for(int j=0;j<3;++j)
@@ -203,7 +199,7 @@ inline Matrix3 add3(const Matrix3& a, const Matrix3& b) {
     return r;
 }
 
-inline Matrix3 subtract3(const Matrix3& a, const Matrix3& b) {
+ Matrix3 subtract3(const Matrix3& a, const Matrix3& b) {
     Matrix3 r{};
     for(int i=0;i<3;++i)
         for(int j=0;j<3;++j)
@@ -211,13 +207,13 @@ inline Matrix3 subtract3(const Matrix3& a, const Matrix3& b) {
     return r;
 }
 
-inline std::array<double,6> subtract6(const std::array<double,6>& a, const std::array<double,6>& b) {
+ std::array<double,6> subtract6(const std::array<double,6>& a, const std::array<double,6>& b) {
     std::array<double,6> r{};
     for(int i=0;i<6;++i) r[i]=a[i]-b[i];
     return r;
 }
 
-inline std::array<double,6> add6(const std::array<double,6>& a, const std::array<double,6>& b) {
+ std::array<double,6> add6(const std::array<double,6>& a, const std::array<double,6>& b) {
     std::array<double,6> r{};
     for(int i=0;i<6;++i) r[i]=a[i]+b[i];
     return r;
@@ -225,7 +221,7 @@ inline std::array<double,6> add6(const std::array<double,6>& a, const std::array
 
 
 // Setup process noise Q for acceleration noise variance accel_var
-inline Matrix6 processNoise(double dt, double accel_var) {
+ Matrix6 processNoise(double dt, double accel_var) {
     Matrix6 Q{};
     double dt2 = dt*dt;
     double dt3 = dt2*dt;
@@ -242,7 +238,7 @@ inline Matrix6 processNoise(double dt, double accel_var) {
     return Q;
 }
 
-inline Matrix6 directionalProcessNoise(double dt, double accel_var, const std::array<double,3>& vel) {
+ Matrix6 directionalProcessNoise(double dt, double accel_var, const std::array<double,3>& vel) {
     Matrix6 Q = processNoise(dt, accel_var);
     double vx = vel[0];
     double vy = vel[1];
@@ -272,7 +268,7 @@ inline Matrix6 directionalProcessNoise(double dt, double accel_var, const std::a
 }
 
 // Kalman filter predict step
-inline void predict(State& state, Matrix6& P, double dt, double accel_var) {
+ void predict(State& state, Matrix6& P, double dt, double accel_var) {
     for(int i=0;i<3;++i) state.pos[i] += dt * state.vel[i];
     Matrix6 F = identity6();
     for(int i=0;i<3;++i) F[i][i+3]=dt;
@@ -282,7 +278,7 @@ inline void predict(State& state, Matrix6& P, double dt, double accel_var) {
 }
 
 // Kalman filter update step
-inline void update(State& state, Matrix6& P, const std::array<double,3>& z, const Matrix3& R) {
+ void update(State& state, Matrix6& P, const std::array<double,3>& z, const Matrix3& R) {
     // Innovation
     std::array<double,3> y{};
     for(int i=0;i<3;++i) y[i] = z[i] - state.pos[i];
@@ -327,7 +323,7 @@ inline void update(State& state, Matrix6& P, const std::array<double,3>& z, cons
 }
 
 // RTS smoother
-inline void smooth(std::vector<StepData>& steps, double accel_var) {
+ void smooth(std::vector<StepData>& steps, double accel_var) {
     int n = steps.size();
     for(int k=n-2;k>=0;--k) {
         double dt = steps[k+1].dt;

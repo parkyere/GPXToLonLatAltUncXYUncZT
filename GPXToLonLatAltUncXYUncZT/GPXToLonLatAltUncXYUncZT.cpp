@@ -1,13 +1,4 @@
-#include <iostream>
-#include <filesystem>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <ctime>
-#include <iomanip>
-#include <sstream>
-#include <cctype>
-#include <algorithm>
+#include "Common.hpp"
 #include "tinyxml2.h"
 #include "rts_smoother.h"
 #include "MapConstruction.hpp"
@@ -125,6 +116,8 @@ int main(int argc, char* argv[]) {
     if (!fs::exists(target)) {
         fs::create_directories(target);
     }
+	MapConstruction mapConstruction;
+
 	std::vector<PoseFile> poseFiles;
     for (const auto& entry : fs::directory_iterator(source)) {
         if (!entry.is_regular_file()) continue;
@@ -207,6 +200,7 @@ int main(int argc, char* argv[]) {
             std::cerr << "Failed to write " << outPath << "\n";
         }
     }
-
+	std::vector<VertexPtr> constructedMap = mapConstruction.constructMapMain(poseFiles, 5, 5);
+	MapConstruction::writeToFile(constructedMap, target.generic_string() + "/out");
 }
 

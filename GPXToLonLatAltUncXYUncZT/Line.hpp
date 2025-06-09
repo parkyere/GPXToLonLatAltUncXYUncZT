@@ -1,5 +1,5 @@
 #include "Common.hpp"
-//#include "Vertex.hpp"
+#include "Vertex.hpp"
 
 struct Line;
 using LinePtr = std::shared_ptr<Line>;

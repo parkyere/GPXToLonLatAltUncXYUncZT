@@ -25,15 +25,7 @@
  *
  */
 #pragma once
-#include <string>
-#include <vector>
-#include <filesystem>
-#include <iostream>
-#include <sstream>
-#include <map>
-#include <algorithm>
-#include <memory>
-#include <queue>
+#include "Common.hpp"
 #include "Vertex.hpp"
 #include "Line.hpp"
 #include "Edge.hpp"
@@ -73,13 +65,13 @@ struct PoseFile {
  * files one for vertices and one for edges.
  */
 struct MapConstruction {
-	static int curveid;				// counter for pose
-	static std::string curveName;	// file name for pose
+	int curveid;				// counter for pose
+	std::string curveName;	// file name for pose
 /**
  * Writes the constructed map into files.
  */
 
-	static void writeToFile(std::vector<VertexPtr>& vList, std::string& fileName) {
+	static void writeToFile(std::vector<VertexPtr>& vList, const std::string& fileName) {
 		try {
 			int count = 0;
 			std::ostringstream bwedges;
@@ -91,7 +83,7 @@ struct MapConstruction {
 			for (int i = 0; i < vList.size(); i++) {
 				Vertex& v = *(vList[i]);
 				auto llh = ecefToGeodetic(v.getX(), v.getY(), v.getZ());
-				bvertex << std::format("{0}, {1:.8f}, {2:.8f}, {3:.8f}\n", i, llh[0], llh[1], llh[2]);
+				bvertex << std::format("{0}, {1:.8f}, {2:.8f}, {3:.8f}\n", i, llh[1], llh[0], llh[2]);
 				for (int j = 0; j < v.getDegree(); j++) {
 					if (i != v.getAdjacentElementAt(j)) {
 						bwedges << std::format("{0}, {1}, {2}\n", count, i, v.getAdjacentElementAt(j));

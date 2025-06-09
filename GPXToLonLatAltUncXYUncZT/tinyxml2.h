@@ -569,7 +569,7 @@ public:
         return !IsUTF8Continuation(p) && isspace( static_cast<unsigned char>(p) );
     }
 
-    inline static bool IsNameStartChar( unsigned char ch ) {
+     static bool IsNameStartChar( unsigned char ch ) {
         if ( ch >= 128 ) {
             // This is a heuristic guess in attempt to not implement Unicode-aware isalpha()
             return true;
@@ -580,19 +580,19 @@ public:
         return ch == ':' || ch == '_';
     }
 
-    inline static bool IsNameChar( unsigned char ch ) {
+     static bool IsNameChar( unsigned char ch ) {
         return IsNameStartChar( ch )
                || isdigit( ch )
                || ch == '.'
                || ch == '-';
     }
 
-    inline static bool IsPrefixHex( const char* p) {
+     static bool IsPrefixHex( const char* p) {
         p = SkipWhiteSpace(p, 0);
         return p && *p == '0' && ( *(p + 1) == 'x' || *(p + 1) == 'X');
     }
 
-    inline static bool StringEqual( const char* p, const char* q, int nChar=INT_MAX )  {
+     static bool StringEqual( const char* p, const char* q, int nChar=INT_MAX )  {
         if ( p == q ) {
             return true;
         }
@@ -602,7 +602,7 @@ public:
         return strncmp( p, q, static_cast<size_t>(nChar) ) == 0;
     }
 
-    inline static bool IsUTF8Continuation( const char p ) {
+     static bool IsUTF8Continuation( const char p ) {
         return ( p & 0x80 ) != 0;
     }
 
@@ -1985,7 +1985,7 @@ private:
 };
 
 template<class NodeType, size_t PoolElementSize>
-inline NodeType* XMLDocument::CreateUnlinkedNode( MemPoolT<PoolElementSize>& pool )
+ NodeType* XMLDocument::CreateUnlinkedNode( MemPoolT<PoolElementSize>& pool )
 {
     TIXMLASSERT( sizeof( NodeType ) == PoolElementSize );
     TIXMLASSERT( sizeof( NodeType ) == pool.ItemSize() );
@@ -2338,7 +2338,7 @@ protected:
     virtual void Write( const char* data, size_t size );
     virtual void Putc( char ch );
 
-    inline void Write(const char* data) { Write(data, strlen(data)); }
+     void Write(const char* data) { Write(data, strlen(data)); }
 
     void SealElementIfJustOpened();
     bool _elementJustOpened;

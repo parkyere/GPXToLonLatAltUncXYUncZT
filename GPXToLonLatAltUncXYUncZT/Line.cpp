@@ -1,6 +1,7 @@
+#pragma once
 #include "Line.hpp"
 #include "Edge.hpp"
-#include "Vertex.hpp"
+//#include "Vertex.hpp"
 
 Line::Line(VertexPtr p1, VertexPtr p2)
     : p1{ p1 }, p2{ p2 },
@@ -36,23 +37,23 @@ Line::Line(VertexPtr p1, VertexPtr p2)
         theta = -rad2deg(std::numbers::pi / 2.0);
     }
 }
-inline VertexPtr Line::getP1() { return p1; }
-inline VertexPtr Line::getP2() { return p2; }
-inline double Line::getXdiff() const { return xdiff; }
-inline double Line::getYdiff() const { return ydiff; }
-inline double Line::getZdiff() const { return zdiff; }
-inline double Line::getM() const { return m; }
-inline double Line::getC() const { return c; }
-inline double Line::getTheta() const { return theta; }
-inline void Line::setM(double m) { this->m = m; }
-inline void Line::setC(double c) { this->c = c; }
-inline void Line::setTheta(double theta) { this->theta = theta; }
-inline std::string Line::toString() const {
+ VertexPtr Line::getP1() { return p1; }
+ VertexPtr Line::getP2() { return p2; }
+ double Line::getXdiff() const { return xdiff; }
+ double Line::getYdiff() const { return ydiff; }
+ double Line::getZdiff() const { return zdiff; }
+ double Line::getM() const { return m; }
+ double Line::getC() const { return c; }
+ double Line::getTheta() const { return theta; }
+ void Line::setM(double m) { this->m = m; }
+ void Line::setC(double c) { this->c = c; }
+ void Line::setTheta(double theta) { this->theta = theta; }
+ std::string Line::toString() const {
     return std::format("[{0:.8f} {1:.8f} {2:.8f}; {3:.8f} {4:.8f} {5:.8f}]",
         p1->getX(), p1->getY(), p1->getZ(),
         p2->getX(), p2->getY(), p2->getZ());
 }
-inline double Line::avgAltitude() const {
+ double Line::avgAltitude() const {
     return (p1->getZ() + p2->getZ()) / 2.0;
 }
 
@@ -62,7 +63,7 @@ inline double Line::avgAltitude() const {
 * @param eps the radius of the disc
 * @return a optional<array<double,2>> containing two intersection points or null when they don't intersect.
 */
-inline std::optional<std::array<double, 2>> Line::pIntersection(const Vertex& p, double eps, bool precisionCompromise) const {
+ std::optional<std::array<double, 2>> Line::pIntersection(const Vertex& p, double eps, bool precisionCompromise) const {
     /*
     * Line 1: x1+(x2-x1)*t = x; x1+xdiff*t = x y1+(y2-y1)*t = y; y1+ydiff*t = y
     *
@@ -124,7 +125,7 @@ inline std::optional<std::array<double, 2>> Line::pIntersection(const Vertex& p,
 *         points on this line and next two corresponds to intersections with lines[0] and
 *         lines[1] respectively.
 */
-inline std::array<double, 4> Line::getIntervals(std::array<LinePtr, 2>& lines) {
+ std::array<double, 4> Line::getIntervals(std::array<LinePtr, 2>& lines) {
     double cIntervalStart;
     double cIntervalEnd;
     double neighborhoodStart;
@@ -181,12 +182,12 @@ inline std::array<double, 4> Line::getIntervals(std::array<LinePtr, 2>& lines) {
 * @param t the parameter
 * @return a vertex on this line with parameter t.
 */
-inline VertexPtr Line::getVertex(double t) const {
+ VertexPtr Line::getVertex(double t) const {
     return VertexPtr{ new Vertex(p1->getX() + xdiff * t, p1->getY() + ydiff * t,
         p1->getZ() + zdiff * t) };
 }
 // sets curveStart, curveEnd, edgeStart, edgeEnd on edge.
-inline void Line::setIntervalOnEdge(Edge& e, double eps, double cIntervalStart, double cIntervalEnd, double vstart, double vend) {
+ void Line::setIntervalOnEdge(Edge& e, double eps, double cIntervalStart, double cIntervalEnd, double vstart, double vend) {
 	double interval[2];
 	interval[0] = std::max(0.0, cIntervalStart);
 	if (isEqual(vstart, -1)) {
@@ -235,7 +236,7 @@ inline void Line::setIntervalOnEdge(Edge& e, double eps, double cIntervalStart, 
 	e.setEdgeEnd(vend);
 }
 
-inline std::array<LinePtr, 2> Line::getEpsilonNeighborhood(Line& vline, double eps) {
+ std::array<LinePtr, 2> Line::getEpsilonNeighborhood(Line& vline, double eps) {
     // compute the equations of boundaries of eps-region around the line
     std::array<LinePtr, 2> lines;
 
@@ -274,7 +275,7 @@ inline std::array<LinePtr, 2> Line::getEpsilonNeighborhood(Line& vline, double e
 * @param line is a line parallel to this line
 * @return a optional<array<double,2>> containing two intersection points or empty optional when they don't intersect
 */
-inline std::optional<std::array<double, 2>> Line::getTParallel(Line& line, double eps) {
+ std::optional<std::array<double, 2>> Line::getTParallel(Line& line, double eps) {
     double t[2];
     double newm;
     double x1, y1, x2, y2;
@@ -338,7 +339,7 @@ inline std::optional<std::array<double, 2>> Line::getTParallel(Line& line, doubl
 * @return true when they have intersection or false when they don't intersect.
 */
 // TODO(mahmuda): Add unit test for this method.
-inline bool Line::pIntersection(Edge& e, double eps) {
+ bool Line::pIntersection(Edge& e, double eps) {
     /*
     * Line 1: x1+(x2-x1)*t = x y1+(y2-y1)*t = y
     * Line 2: y = mx + c
@@ -559,7 +560,7 @@ inline bool Line::pIntersection(Edge& e, double eps) {
 * @param p the vertex from which we will compute distance
 * @return a double value containing distance
 */
-inline double Line::distance(const Vertex& p) {
+ double Line::distance(const Vertex& p) {
     double distance = 0;
     if (!isEqual(xdiff, 0)) {
         distance =
@@ -585,7 +586,7 @@ inline double Line::distance(const Vertex& p) {
 * Computes t value on this line for Vertex v, t = 0 at p1 and t = 1 at p2.
 * @return a double value.
 */
-inline double Line::tValueOnLine(const Vertex& v) const {
+ double Line::tValueOnLine(const Vertex& v) const {
     if (isEqual(xdiff, 0.0)) {
         return (v.getY() - p1->getY()) / ydiff;
     }
@@ -598,7 +599,7 @@ inline double Line::tValueOnLine(const Vertex& v) const {
 * Check if the vertex, v lies on this line.
 * @return boolean true, if the vertex lies on this line or false otherwise.
 */
-inline bool Line::onLine(const Vertex& v) const {
+ bool Line::onLine(const Vertex& v) const {
 
     if (isEqual(xdiff, 0.0) && isEqual(v.getX(), p1->getX())) {
         return true;

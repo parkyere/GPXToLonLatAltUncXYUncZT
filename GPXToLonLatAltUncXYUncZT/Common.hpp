@@ -1,5 +1,6 @@
 //#include "Vertex.hpp"
 //#include "Line.hpp"
+#pragma once
 #ifndef COMMON_HPP
 #define COMMON_HPP
 #include <list>
@@ -17,9 +18,19 @@
 #include <algorithm>
 #include <string>
 #include <format>
-#include "rts_smoother.h"
+#include <filesystem>
+#include <sstream>
+#include <map>
+#include <queue>
+#include <fstream>
+#include <ctime>
+#include <iomanip>
+#include <cctype>
+//#include "rts_smoother.h"
+double deg2rad(double deg);
+double rad2deg(double rad);
 constexpr double EqualityCriterion = 1e-36; // Criterion for equality of two doubles
-inline bool isEqual(double a, double b) { return std::abs(a - b) < EqualityCriterion; }
+bool isEqual(double a, double b);
 #endif
 //struct Vertex;
 //struct Edge;

@@ -1,6 +1,6 @@
 #include "Common.hpp"
 //#include "Line.hpp"
-//#include "Vertex.hpp"
+#include "Vertex.hpp"
 struct Line;
 using LinePtr = std::shared_ptr<Line>;
 struct Edge;

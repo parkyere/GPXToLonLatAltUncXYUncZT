@@ -1,8 +1,9 @@
+#pragma once
 #include "Edge.hpp"
 #include "Line.hpp"
-#include "Vertex.hpp"
+//#include "Vertex.hpp"
 
-inline void Edge::reset() {
+ void Edge::reset() {
 	curveStart = std::numeric_limits<double>::max();
 	curveEnd = -1.0;
 	edgeStart = std::numeric_limits<double>::max();
@@ -11,12 +12,12 @@ inline void Edge::reset() {
 	done = false;
 }
 
-inline Edge::Edge(VertexPtr v1, VertexPtr v2) : vertex1{ v1 }, vertex2{ v2 },
+ Edge::Edge(VertexPtr v1, VertexPtr v2) : vertex1{ v1 }, vertex2{ v2 },
 edgeSplitPositions{ new std::vector<double>() },
 edgeSplitVertices{ new std::vector<int>() } {
 	reset();
 }
-inline void Edge::set(Edge& edge) {
+ void Edge::set(Edge& edge) {
 	curveStart = edge.curveStart;
 	curveEnd = edge.curveEnd;
 	edgeStart = edge.edgeStart;
@@ -25,35 +26,35 @@ inline void Edge::set(Edge& edge) {
 	done = edge.done;
 }
 
-inline VertexPtr Edge::getVertex1() const { return vertex1; }
+ VertexPtr Edge::getVertex1() const { return vertex1; }
 
-inline VertexPtr Edge::getVertex2() const { return vertex2; }
+ VertexPtr Edge::getVertex2() const { return vertex2; }
 
-inline LinePtr Edge::getLine() { return line; }
+ LinePtr Edge::getLine() { return line; }
 
-inline bool Edge::getDone() { return done; }
+ bool Edge::getDone() { return done; }
 
-inline void Edge::setDone(bool done) { this->done = done; }
+ void Edge::setDone(bool done) { this->done = done; }
 
-inline double Edge::getCurveStart() { return curveStart; }
+ double Edge::getCurveStart() { return curveStart; }
 
-inline void Edge::setCurveStart(double curveStart) { this->curveStart = curveStart; }
+ void Edge::setCurveStart(double curveStart) { this->curveStart = curveStart; }
 
-inline double Edge::getCurveEnd() { return curveEnd; }
+ double Edge::getCurveEnd() { return curveEnd; }
 
-inline void Edge::setCurveEnd(double curveEnd) { this->curveEnd = curveEnd; }
+ void Edge::setCurveEnd(double curveEnd) { this->curveEnd = curveEnd; }
 
-inline double Edge::getEdgeStart() { return edgeStart; }
+ double Edge::getEdgeStart() { return edgeStart; }
 
-inline void Edge::setEdgeStart(double edgeStart) { this->edgeStart = edgeStart; }
+ void Edge::setEdgeStart(double edgeStart) { this->edgeStart = edgeStart; }
 
-inline double Edge::getEdgeEnd() { return edgeEnd; }
+ double Edge::getEdgeEnd() { return edgeEnd; }
 
-inline void Edge::setEdgeEnd(double edgeEnd) { this->edgeEnd = edgeEnd; }
+ void Edge::setEdgeEnd(double edgeEnd) { this->edgeEnd = edgeEnd; }
 
-inline int Edge::getCurveStartIndex() { return curveStartIndex; }
+ int Edge::getCurveStartIndex() { return curveStartIndex; }
 
-inline void Edge::setCurveStartIndex(int startIndex) {
+ void Edge::setCurveStartIndex(int startIndex) {
 	if (startIndex >= 0) {
 		this->curveStartIndex = startIndex;
 	}
@@ -62,9 +63,9 @@ inline void Edge::setCurveStartIndex(int startIndex) {
 	}
 }
 
-inline int Edge::getCurveEndIndex() { return curveEndIndex; }
+ int Edge::getCurveEndIndex() { return curveEndIndex; }
 
-inline void Edge::setCurveEndIndex(int endIndex) {
+ void Edge::setCurveEndIndex(int endIndex) {
 	curveEndIndex = endIndex;
 }
 
@@ -72,7 +73,7 @@ inline void Edge::setCurveEndIndex(int endIndex) {
 // Inserts a new split position if the list doesn't have it, otherwise return.
 // position: indicvate the new split position
 // vertex : indicates the vertex which should be inserted in this edge.
-inline void Edge::addSplit(double position, int vertex) {
+ void Edge::addSplit(double position, int vertex) {
 	int i = 0;
 	for (i = 0; i < edgeSplitPositions->size(); i++) {
 		if (isEqual((*edgeSplitPositions)[i], position)) {
@@ -90,6 +91,6 @@ inline void Edge::addSplit(double position, int vertex) {
 	edgeSplitVertices->push_back(vertex);
 }
 
-inline std::string Edge::toString() const {
+ std::string Edge::toString() const {
 	return vertex1->toString() + vertex2->toString();
 }
