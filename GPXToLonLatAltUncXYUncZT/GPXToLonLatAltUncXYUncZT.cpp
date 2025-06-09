@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <sstream>
 #include <cctype>
+#include <algorithm>
 #include "tinyxml2.h"
 #include "rts_smoother.h"
 #include "MapConstruction.hpp"
@@ -127,8 +128,9 @@ int main(int argc, char* argv[]) {
 	std::vector<PoseFile> poseFiles;
     for (const auto& entry : fs::directory_iterator(source)) {
         if (!entry.is_regular_file()) continue;
-        auto ext = entry.path().extension();
-        if (ext != ".gpx" && ext != ".GPX") continue;
+        std::string ext = entry.path().extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return std::tolower(c); });
+        if (ext != ".gpx") continue;
 
         std::vector<Record> records;
         if (!parseGPX(entry.path(), records)) {
