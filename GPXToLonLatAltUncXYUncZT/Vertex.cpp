@@ -13,7 +13,7 @@ Vertex::Vertex(double x, double y, double z, double timestamp) : Vertex(x, y, z)
 Vertex::Vertex(double lat, double lng, double alt, double x, double y, double z) : Vertex(x, y, z) {
 	this->lat = lat;
 	this->lng = lng;
-	this->alt - alt;
+	this->alt = alt;
 }
 Vertex::Vertex(double lat, double lng, double alt, double x, double y, double z, double timestamp) : Vertex(lat, lng, alt, x, y, z) {
 	this->timestamp = timestamp;
