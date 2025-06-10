@@ -260,6 +260,9 @@ struct StepData {
     Matrix6 Qloc = multiply6(multiply6(T, Q), transpose6(T));
     // increase cross-track noise (index 1 and 4)
     Qloc[1][1] *= 5.0;
+    // directionalProcessNoise 함수 내에서
+    Qloc[2][2] *= 2.0; // 고도 위치 노이즈 조정
+    Qloc[5][5] *= 2.0; // 고도 속도 노이즈 조정
     Qloc[4][4] *= 5.0;
     // transform back
     Matrix6 Tt = transpose6(T);

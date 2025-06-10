@@ -119,6 +119,7 @@ int main(int argc, char* argv[]) {
 	MapConstruction mapConstruction;
 
 	std::vector<PoseFile> poseFiles;
+	std::vector<PoseFile> rawPoseFiles;
     for (const auto& entry : fs::directory_iterator(source)) {
         if (!entry.is_regular_file()) continue;
         std::string ext = entry.path().extension().string();
@@ -151,6 +152,8 @@ int main(int argc, char* argv[]) {
 
         std::vector<StepData> steps(measurements.size());
         State state{};
+		state.pos = geodeticToECEF(measurements[0].lat, measurements[0].lon, measurements[0].alt);
+
         Matrix6 P = identity6();
         double accel_var = 1.0; // process noise acceleration variance
         double prev_time = measurements[0].timestamp;
