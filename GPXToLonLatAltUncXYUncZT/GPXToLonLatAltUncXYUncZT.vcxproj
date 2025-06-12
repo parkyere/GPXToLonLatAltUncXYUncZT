@@ -146,6 +146,8 @@
   <ItemGroup>
     <ClInclude Include="Common.hpp" />
     <ClInclude Include="Edge.hpp" />
+    <ClInclude Include="GPXToLonLatAltUncXYUncZT.h" />
+    <ClInclude Include="grid_averager.hpp" />
     <ClInclude Include="Line.hpp" />
     <ClInclude Include="MapConstruction.hpp" />
     <ClInclude Include="rts_smoother.h" />

@@ -60,6 +60,15 @@ struct PoseFile {
 		return poseFile;
 	}
 };
+struct BoundingBoxWithPoseFileInfo {
+	double minX, minY, maxX, maxY;
+	std::vector<PoseFile>& pFiles;
+	size_t totalPts;
+	BoundingBoxWithPoseFileInfo(double minX, double minY, double maxX, double maxY, std::vector<PoseFile>& pFile, size_t totalPtsNum)
+		: minX{ minX }, minY{ minY }, maxX{ maxX }, maxY{ maxY }, pFiles{ pFile }, totalPts{} {
+	}
+	BoundingBoxWithPoseFileInfo() = delete; // Default constructor is deleted to avoid uninitialized state
+};
 /**
  * An object that takes a set of poses as input, construct graph and write two
  * files one for vertices and one for edges.
@@ -447,8 +456,8 @@ struct MapConstruction {
 
         std::priority_queue<EdgePtr, std::vector<EdgePtr>, 
             bool(*)(const EdgePtr&, const EdgePtr&)> pq(
-//                [](const EdgePtr& a, const EdgePtr& b) { return *a < *b; }//?
-				[](const EdgePtr& a, const EdgePtr& b) { return *a > *b; }
+                [](const EdgePtr& a, const EdgePtr& b) { return *a < *b; }//?
+//				[](const EdgePtr& a, const EdgePtr& b) { return *a > *b; }
             );
 		for (int i = 0; i < edges.size(); i++) {
 			computeNextInterval(*(edges[i]), pose, 1, eps, altEps);

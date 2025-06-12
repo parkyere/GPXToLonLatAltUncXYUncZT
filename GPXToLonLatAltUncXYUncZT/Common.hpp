@@ -26,6 +26,11 @@
 #include <ctime>
 #include <iomanip>
 #include <cctype>
+#include <unordered_map>
+#include <cstddef>
+#include <thread>
+#include <atomic>
+#include <functional>
 //#include "rts_smoother.h"
 double deg2rad(double deg);
 double rad2deg(double rad);

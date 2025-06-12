@@ -21,7 +21,9 @@ Vertex::Vertex(double lat, double lng, double alt, double x, double y, double z,
 double Vertex::getX() const { return x; }
 double Vertex::getY() const { return y; }
 double Vertex::getZ() const { return z; }
-
+void Vertex::setX(double x) { this->x = x; }
+void Vertex::setY(double y) { this->y = y; }
+void Vertex::setZ(double z) { this->z = z; }
 double Vertex::getLat() const { return lat; }
 
 double Vertex::getLng() const { return lng; }

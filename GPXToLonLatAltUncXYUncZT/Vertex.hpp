@@ -17,6 +17,9 @@ public:
 	double getX() const;
 	double getY() const;
 	double getZ() const;
+	void setX(double x);
+	void setY(double y);
+	void setZ(double z);
 	double getLat() const;
 	double getLng() const;
 	double getAlt() const;
