@@ -107,6 +107,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <EnableModules>true</EnableModules>
       <BuildStlModules>true</BuildStlModules>
+      <LanguageStandard_C>stdclatest</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -124,6 +125,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <EnableModules>true</EnableModules>
       <BuildStlModules>true</BuildStlModules>
+      <LanguageStandard_C>stdclatest</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -136,6 +138,8 @@
     <ClCompile Include="Edge.cpp" />
     <ClCompile Include="GPXToLonLatAltUncXYUncZT.cpp" />
     <ClCompile Include="Line.cpp" />
+    <ClCompile Include="shell.c" />
+    <ClCompile Include="sqlite3.c" />
     <ClCompile Include="tinyxml2.cpp" />
     <ClCompile Include="Vertex.cpp" />
   </ItemGroup>
@@ -145,6 +149,8 @@
     <ClInclude Include="Line.hpp" />
     <ClInclude Include="MapConstruction.hpp" />
     <ClInclude Include="rts_smoother.h" />
+    <ClInclude Include="sqlite3.h" />
+    <ClInclude Include="sqlite3ext.h" />
     <ClInclude Include="tinyxml2.h" />
     <ClInclude Include="Vertex.hpp" />
   </ItemGroup>

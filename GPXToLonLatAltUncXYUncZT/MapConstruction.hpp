@@ -83,7 +83,7 @@ struct MapConstruction {
 			for (int i = 0; i < vList.size(); i++) {
 				Vertex& v = *(vList[i]);
 				auto llh = ecefToGeodetic(v.getX(), v.getY(), v.getZ());
-				bvertex << std::format("{0}, {1:.8f}, {2:.8f}, {3:.8f}\n", i, llh[1], llh[0], llh[2]);
+				bvertex << std::format("{0}, {1:.16f}, {2:.16f}, {3:.16f}\n", i, llh[1], llh[0], llh[2]);
 				for (int j = 0; j < v.getDegree(); j++) {
 					if (i != v.getAdjacentElementAt(j)) {
 						bwedges << std::format("{0}, {1}, {2}\n", count, i, v.getAdjacentElementAt(j));
@@ -447,7 +447,8 @@ struct MapConstruction {
 
         std::priority_queue<EdgePtr, std::vector<EdgePtr>, 
             bool(*)(const EdgePtr&, const EdgePtr&)> pq(
-                [](const EdgePtr& a, const EdgePtr& b) { return *a < *b; }
+//                [](const EdgePtr& a, const EdgePtr& b) { return *a < *b; }//?
+				[](const EdgePtr& a, const EdgePtr& b) { return *a > *b; }
             );
 		for (int i = 0; i < edges.size(); i++) {
 			computeNextInterval(*(edges[i]), pose, 1, eps, altEps);
@@ -482,7 +483,7 @@ struct MapConstruction {
 			if (edge->getCurveStart() > 0) {
 
 				std::cout << curveName
-					<< " inserted as an edge until " << edge->getCurveStart();
+					<< " inserted as an edge until " << edge->getCurveStart() << '\n';
 
 				int index = (int)std::floor(edge->getCurveStart());
 

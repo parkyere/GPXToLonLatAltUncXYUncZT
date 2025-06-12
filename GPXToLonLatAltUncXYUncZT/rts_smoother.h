@@ -97,7 +97,7 @@ struct StepData {
     double d = m[1][0], e = m[1][1], f = m[1][2];
     double g = m[2][0], h = m[2][1], i = m[2][2];
     double det = a*(e*i - f*h) - b*(d*i - f*g) + c*(d*h - e*g);
-    if(std::abs(det) < 1e-12) throw std::runtime_error("Matrix singular");
+    if(std::abs(det) < 1e-24) throw std::runtime_error("Matrix singular");
     Matrix3 inv;
     inv[0][0] =  (e*i - f*h)/det;
     inv[0][1] = -(b*i - c*h)/det;

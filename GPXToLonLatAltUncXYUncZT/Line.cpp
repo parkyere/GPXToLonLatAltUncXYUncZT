@@ -18,10 +18,12 @@ Line::Line(VertexPtr p1, VertexPtr p2)
 
     if (!isEqual(xdiff, 0.0)) {
         m = ydiff / xdiff;
-        VertexPtr vector{ new Vertex(p2->getX() - p1->getX(), p2->getY() - p1->getY(), 0) };
-        double angle1 = Vertex::dotProd(*vector, Vertex(1.0, 0.0, 0.0))
-            / vector->norm();
-        double cosAngle1 = std::acos(angle1);
+        //VertexPtr vector{ new Vertex(p2->getX() - p1->getX(), p2->getY() - p1->getY(), 0) };
+        //double angle1 = Vertex::dotProd(*vector, Vertex(1.0, 0.0, 0.0))
+        //    / vector->norm();
+		//double angle1 = vector->getX() / vector->norm();
+        //double cosAngle1 = std::acos(angle1);
+        double cosAngle1 = std::acos(xdiff/(std::sqrt(xdiff*xdiff + ydiff*ydiff)));
         if (ydiff >= 0) {
             theta = rad2deg(cosAngle1);
         }
@@ -49,7 +51,7 @@ Line::Line(VertexPtr p1, VertexPtr p2)
  void Line::setC(double c) { this->c = c; }
  void Line::setTheta(double theta) { this->theta = theta; }
  std::string Line::toString() const {
-    return std::format("[{0:.8f} {1:.8f} {2:.8f}; {3:.8f} {4:.8f} {5:.8f}]",
+    return std::format("[{0:.16f} {1:.16f} {2:.16f}; {3:.16f} {4:.16f} {5:.16f}]",
         p1->getX(), p1->getY(), p1->getZ(),
         p2->getX(), p2->getY(), p2->getZ());
 }

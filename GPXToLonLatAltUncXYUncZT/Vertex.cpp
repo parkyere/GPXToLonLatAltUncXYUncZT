@@ -86,7 +86,7 @@ void Vertex::reset() { done = false; }
 
 //resets a vertex's processing state
 std::string Vertex::toString() const {
-	return std::format("{0:.8f} {1:.8f} {2:.8f}", x, y, z);
+	return std::format("{0:.16f} {1:.16f} {2:.16f}", x, y, z);
 }
 
 Vertex Vertex::deepCopy() {

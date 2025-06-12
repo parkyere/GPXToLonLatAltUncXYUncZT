@@ -203,7 +203,7 @@ int main(int argc, char* argv[]) {
             std::cerr << "Failed to write " << outPath << "\n";
         }
     }
-	std::vector<VertexPtr> constructedMap = mapConstruction.constructMapMain(poseFiles, 5, 5);
+	std::vector<VertexPtr> constructedMap = mapConstruction.constructMapMain(poseFiles, 15, 15);
 	MapConstruction::writeToFile(constructedMap, target.generic_string() + "/out");
 }
 
