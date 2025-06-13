@@ -242,11 +242,11 @@ int main(int argc, char* argv[]) {
         if (NotValidArea(minX, minY, maxX, maxY)) {
             throw std::runtime_error("No valid GPX files found in the source directory.\n");
         }
-        BoundingBoxWithPoseFileInfo bbox(minX, minY, maxX, maxY, poseFiles,numPts);
-        GridAverager gridAverager(bbox);
-		gridAverager.PerformAveragingOperation();
+        //BoundingBoxWithPoseFileInfo bbox(minX, minY, maxX, maxY, poseFiles,numPts);
+        //GridAverager gridAverager(bbox);
+		//gridAverager.PerformAveragingOperation();
         MapConstruction mapConstruction;
-        std::vector<VertexPtr> constructedMap = mapConstruction.constructMapMain(poseFiles, 15, 15);
+        std::vector<VertexPtr> constructedMap = mapConstruction.constructMapMain(poseFiles, 10, 10);
         MapConstruction::writeToFile(constructedMap, target.generic_string() + "/out");
     }
     catch (const std::exception& e) {
