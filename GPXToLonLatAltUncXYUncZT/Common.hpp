@@ -31,6 +31,7 @@
 #include <thread>
 #include <atomic>
 #include <functional>
+#include <cstdint>
 //#include "rts_smoother.h"
 double deg2rad(double deg);
 double rad2deg(double rad);

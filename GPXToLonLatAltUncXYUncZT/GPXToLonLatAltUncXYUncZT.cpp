@@ -256,6 +256,7 @@ int main(int argc, char* argv[]) {
         MapConstruction mapConstruction;
         std::vector<VertexPtr> constructedMap = mapConstruction.constructMapMain(poseFiles, 15, 15);
         MapConstruction::writeToFile(constructedMap, target.generic_string() + "/out");
+        //std::vector<VertexPtr> constructedMap = 
     }
     catch (const std::exception& e) {
         std::cerr << "Error running the program: " << e.what() << "\n";

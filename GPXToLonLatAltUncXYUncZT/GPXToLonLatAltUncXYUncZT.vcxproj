@@ -150,6 +150,7 @@
     <ClInclude Include="grid_averager.hpp" />
     <ClInclude Include="Line.hpp" />
     <ClInclude Include="MapConstruction.hpp" />
+    <ClInclude Include="MapConstructionBySweeping.hpp" />
     <ClInclude Include="rts_smoother.h" />
     <ClInclude Include="sqlite3.h" />
     <ClInclude Include="sqlite3ext.h" />
