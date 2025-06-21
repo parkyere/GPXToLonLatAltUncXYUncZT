@@ -1,4 +1,3 @@
-#pragma once
 #include "Edge.hpp"
 #include "Line.hpp"
 //#include "Vertex.hpp"

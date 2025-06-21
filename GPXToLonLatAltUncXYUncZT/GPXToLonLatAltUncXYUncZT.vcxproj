@@ -156,6 +156,14 @@
     <ClInclude Include="tinyxml2.h" />
     <ClInclude Include="Vertex.hpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Edge.java">
+      <FileType>Discomap</FileType>
+    </None>
+    <None Include="Line.java" />
+    <None Include="MapConstruction.java" />
+    <None Include="Vertex.java" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

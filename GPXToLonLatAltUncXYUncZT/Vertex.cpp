@@ -1,4 +1,3 @@
-#pragma once
 #include "Vertex.hpp"
 bool isEqual(double a, double b) { return std::abs(a - b) < EqualityCriterion; }
 Vertex::Vertex() : adjacencyList{ new std::vector<int>() } {}
